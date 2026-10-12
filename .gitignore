@@ -1,0 +1,38 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Streamlit secrets (CRITICAL: NEVER commit real credentials)
+.streamlit/secrets.toml
+
+# Virtual environment
+venv/
+.venv/
+env/
+.env
+
+# Testing & caches
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDE & Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+CODEX_MASTER_PROMPT.md
+RECORDING_FIX_REPORT.md
+START_HERE.txt
+VTB_RECORDING_CODEX_STARTER.zip
+
+.streamlit/secrets.toml
+.venv/
+__pycache__/
+.pytest_cache/
