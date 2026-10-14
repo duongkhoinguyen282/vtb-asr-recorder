@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>VietinBank Voice AI — Hệ Thống Thu Thập Dữ Liệu Giọng Nói</title>
+  <link rel="icon" type="image/webp" href="/static/logo-vtb.webp" />
+  <title>VietinBank Voice AI — Trạm Thu Âm Dữ Liệu Giọng Nói</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -32,9 +33,24 @@
   <style>
     body {
       font-family: 'Be Vietnam Pro', sans-serif;
-      background-color: #F2F5F8;
-      background-image: radial-gradient(#DCE4EC 1px, transparent 1px);
-      background-size: 24px 24px;
+      background-color: #EEF3F8;
+      position: relative;
+      overflow-x: hidden;
+    }
+    
+    /* Lớp nền ảnh tòa nhà tài chính VietinBank mờ ảo phía sau */
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: -2;
+      background-image:
+        linear-gradient(135deg, rgba(235, 243, 250, 0.86) 0%, rgba(224, 236, 248, 0.82) 50%, rgba(240, 245, 250, 0.88) 100%),
+        url('/static/bg-vtb.jpg'),
+        url('https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1920&q=80');
+      background-size: cover;
+      background-position: center;
+      filter: saturate(1.08);
     }
     .tabular-nums { font-variant-numeric: tabular-nums; }
     @keyframes rec-pulse {
@@ -43,6 +59,20 @@
       100% { box-shadow: 0 0 0 0 rgba(218, 32, 50, 0); }
     }
     .recording-ring { animation: rec-pulse 1.6s infinite; }
+    @keyframes card-enter {
+      0% { opacity: 0; transform: translateX(18px); }
+      100% { opacity: 1; transform: translateX(0); }
+    }
+    .card-animate-in { animation: card-enter 0.24s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+    @keyframes badge-pop {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.18); }
+      100% { transform: scale(1); }
+    }
+    .streak-pop { animation: badge-pop 0.3s ease-out; }
+    @media (prefers-reduced-motion: reduce) {
+      .recording-ring, .card-animate-in, .streak-pop { animation: none !important; }
+    }
     kbd {
       font-family: 'JetBrains Mono', monospace;
       font-size: 11px;
@@ -52,104 +82,162 @@
     }
   </style>
 </head>
-<body class="text-slate-900 min-h-screen flex flex-col selection:bg-vtb-blue selection:text-white">
+<body class="text-slate-900 min-h-dvh flex flex-col selection:bg-vtb-blue selection:text-white">
 
-  <!-- VIETINBANK ENTERPRISE HEADER -->
-  <header class="bg-gradient-to-r from-vtb-dark via-vtb-blue to-vtb-dark text-white shadow-md relative">
-    <div class="max-w-4xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+  <!-- TOAST NOTIFICATION CONTAINER (ARIA-LIVE) -->
+  <div id="toast-container" aria-live="polite" class="fixed top-4 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- VIETINBANK ENTERPRISE HEADER WITH ACOUSTIC VECTOR ART -->
+  <header class="bg-gradient-to-r from-[#002B4E] via-[#005993] to-[#003865] text-white shadow-lg relative overflow-hidden z-20">
+    <!-- Decorative Acoustic Wave Vector Background -->
+    <svg class="absolute inset-0 w-full h-full opacity-15 pointer-events-none" viewBox="0 0 1440 120" fill="none" preserveAspectRatio="none" aria-hidden="true">
+      <path d="M0 60 C 240 10, 480 110, 720 60 C 960 10, 1200 110, 1440 60" stroke="#38BDF8" stroke-width="2" fill="none"/>
+      <path d="M0 80 C 300 120, 600 20, 900 80 C 1150 120, 1300 30, 1440 70" stroke="#DA2032" stroke-width="2" fill="none"/>
+      <circle cx="1280" cy="20" r="90" stroke="#FFFFFF" stroke-width="1" stroke-dasharray="4 4"/>
+      <circle cx="1280" cy="20" r="140" stroke="#38BDF8" stroke-width="1"/>
+    </svg>
+
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between relative z-10">
       <div class="flex items-center space-x-3.5">
-        <!-- Brand Emblem SVG -->
-        <div class="w-10 h-10 rounded-lg bg-white flex items-center justify-center shadow-sm shrink-0 relative overflow-hidden">
-          <div class="absolute top-0 left-0 right-0 h-1.5 bg-vtb-red"></div>
-          <svg class="w-5 h-5 text-vtb-blue mt-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
-            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-            <line x1="12" x2="12" y1="19" y2="22"/>
-          </svg>
+        <!-- Official VietinBank Voice AI Emblem -->
+        <div class="w-11 h-11 bg-white p-1.5 rounded-xl shadow-md shrink-0 flex items-center justify-center ring-2 ring-white/20">
+          <img src="/static/logo-vtb.webp" alt="VietinBank Logo" class="w-full h-full object-contain" />
         </div>
         <div>
           <div class="flex items-center gap-2">
-            <span class="font-bold text-base sm:text-lg tracking-tight">VietinBank</span>
-            <span class="text-xs uppercase tracking-widest px-2 py-0.5 rounded bg-white/15 text-sky-100 font-semibold">Voice AI Studio</span>
+            <span class="font-extrabold text-lg sm:text-xl tracking-tight text-white">VietinBank</span>
+            <span class="text-[10px] uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-gradient-to-r from-vtb-red to-rose-600 text-white font-bold shadow-sm">Voice AI Studio</span>
           </div>
-          <p class="text-[11px] sm:text-xs text-sky-200/90">Hệ thống thu thập dữ liệu tiếng nói chuẩn 16kHz PCM</p>
+          <p class="text-[11px] sm:text-xs text-sky-200 font-medium">Hệ thống thu thập dữ liệu giọng nói chuẩn 16kHz PCM</p>
         </div>
       </div>
 
-      <!-- Right Status & Active Dataset -->
+      <!-- Right Status: Contributor Counter & Active Dataset -->
       <div class="flex items-center gap-2.5">
-        <div class="hidden sm:flex items-center gap-1.5 bg-slate-900/35 border border-white/15 px-3 py-1.5 rounded-md text-xs">
-          <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
-          <span class="text-sky-200">Tập kịch bản:</span>
-          <span id="badge-dataset" class="font-mono font-semibold text-white">--</span>
+        <div id="streak-pill" class="flex items-center gap-1.5 bg-white/15 backdrop-blur-sm border border-white/25 px-3 py-1.5 rounded-lg text-xs shadow-sm" role="status" aria-atomic="true">
+          <svg class="w-4 h-4 text-amber-300 shrink-0" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>
+          </svg>
+          <span class="text-sky-100 hidden sm:inline">Đóng góp:</span>
+          <span id="user-contribution-count" class="font-mono tabular-nums font-bold text-white">0 câu</span>
+        </div>
+
+        <div class="hidden md:flex items-center gap-1.5 bg-slate-950/40 backdrop-blur-sm border border-white/15 px-3 py-1.5 rounded-lg text-xs">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span id="badge-dataset" class="font-mono font-semibold text-sky-100">--</span>
         </div>
       </div>
     </div>
-    <!-- VietinBank Signature Red-Blue Accent Line -->
-    <div class="h-1 w-full bg-gradient-to-r from-vtb-red via-vtb-red to-vtb-blue"></div>
+    <div class="h-1 w-full bg-gradient-to-r from-vtb-red via-rose-500 to-sky-400"></div>
   </header>
 
-  <main class="max-w-4xl w-full mx-auto px-4 sm:px-6 py-6 flex-1 flex flex-col justify-between gap-5">
+  <main class="max-w-4xl w-full mx-auto px-4 sm:px-6 py-5 flex-1 flex flex-col justify-between gap-4">
 
     <div class="space-y-4">
-      <!-- TOP UTILITY BAR: COMPACT PROFILE + PRIVACY POPOVER -->
-      <div class="bg-white rounded-xl border border-slate-200/90 shadow-sm px-4 py-3 flex flex-wrap items-center justify-between gap-3">
-        <div class="flex flex-wrap items-center gap-3">
+      <!-- TOP CONFIGURATION BAR: GENDER, ACCENT & OPTIONAL NICKNAME -->
+      <section class="bg-white rounded-xl border border-slate-200 shadow-sm p-4 space-y-3">
+        <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
           <div class="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-vtb-blue">
-            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg class="w-4 h-4 shrink-0" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
             </svg>
-            <span>Cấu hình người đọc:</span>
+            <span>Thông tin người đọc</span>
           </div>
 
-          <div class="flex items-center gap-2">
+          <button type="button" onclick="togglePrivacyInfo()" class="text-xs font-medium text-slate-500 hover:text-vtb-blue flex items-center gap-1 transition focus-visible:ring-2 focus-visible:ring-vtb-blue rounded px-1">
+            <svg class="w-3.5 h-3.5 shrink-0" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+            <span>Cam kết bảo mật & ẩn danh</span>
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
+          <!-- Gender -->
+          <div class="sm:col-span-3">
+            <label for="select-gender" class="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">Giới tính giọng *</label>
             <select id="select-gender" onchange="onProfileChange()"
-                    class="rounded-lg border border-slate-300 bg-slate-50 hover:bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 focus:border-vtb-blue focus:ring-2 focus:ring-vtb-blue/15 outline-none transition">
-              <option value="">-- Chọn giới tính * --</option>
+                    class="w-full h-10 rounded-lg border border-slate-300 bg-slate-50 hover:bg-white px-3 text-xs font-semibold text-slate-900 focus:border-vtb-blue focus:ring-2 focus:ring-vtb-blue/20 outline-none transition">
+              <option value="">-- Chọn giới tính --</option>
               <option value="male">Giọng Nam</option>
               <option value="female">Giọng Nữ</option>
             </select>
+          </div>
 
+          <!-- Accent -->
+          <div class="sm:col-span-3">
+            <label for="select-accent" class="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">Vùng miền</label>
             <select id="select-accent" onchange="onProfileChange()"
-                    class="rounded-lg border border-slate-300 bg-slate-50 hover:bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 focus:border-vtb-blue focus:ring-2 focus:ring-vtb-blue/15 outline-none transition">
-              <option value="bac">Vùng miền: Miền Bắc</option>
-              <option value="trung">Vùng miền: Miền Trung</option>
-              <option value="nam">Vùng miền: Miền Nam</option>
-              <option value="khac">Vùng miền: Khác</option>
+                    class="w-full h-10 rounded-lg border border-slate-300 bg-slate-50 hover:bg-white px-3 text-xs font-semibold text-slate-900 focus:border-vtb-blue focus:ring-2 focus:ring-vtb-blue/20 outline-none transition">
+              <option value="bac">Miền Bắc</option>
+              <option value="trung">Miền Trung</option>
+              <option value="nam">Miền Nam</option>
+              <option value="khac">Khác</option>
             </select>
+          </div>
+
+          <!-- Optional Nickname for Leaderboard / Rewards -->
+          <div class="sm:col-span-6">
+            <label for="input-nickname" class="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">
+              Tên/nickname người đọc <span class="text-slate-400 font-normal normal-case">(Tùy chọn)</span>
+            </label>
+            <div class="flex gap-2">
+              <input id="input-nickname" type="text" maxlength="40" placeholder="VD: Công chúa UwU (Để trống nếu muốn ẩn danh)"
+                     onkeydown="if(event.key==='Enter'){event.preventDefault(); applyNickname();}"
+                     class="w-full h-10 rounded-lg border border-slate-300 bg-slate-50 focus:bg-white px-3 text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:border-vtb-blue focus:ring-2 focus:ring-vtb-blue/20 outline-none transition" />
+              <button type="button" onclick="applyNickname()"
+                      class="h-10 px-3.5 rounded-lg bg-slate-800 hover:bg-vtb-blue text-white text-xs font-semibold shrink-0 transition focus-visible:ring-2 focus-visible:ring-vtb-blue">
+                Lưu tên
+              </button>
+            </div>
           </div>
         </div>
 
-        <!-- Privacy Accordion Trigger -->
-        <button onclick="togglePrivacyInfo()" class="text-xs font-medium text-slate-500 hover:text-vtb-blue flex items-center gap-1 transition">
-          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-          </svg>
-          <span>Cam kết bảo mật & ẩn danh</span>
-        </button>
-      </div>
+        <!-- COLLISION CONFIRMATION BANNER (SHOWN WHEN NICKNAME ALREADY EXISTS) -->
+        <div id="nickname-collision-box" class="hidden rounded-lg bg-amber-50 border border-amber-300 p-3 text-xs text-amber-950 flex flex-wrap items-center justify-between gap-3" role="alert">
+          <div class="space-y-0.5">
+            <div class="font-bold flex items-center gap-1.5">
+              <svg class="w-4 h-4 text-amber-600 shrink-0" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/>
+              </svg>
+              <span id="collision-title">Tên này đã tồn tại trên hệ thống!</span>
+            </div>
+            <p id="collision-desc" class="text-amber-800">Bạn có phải là chủ nhân của biệt danh này và muốn thu tiếp để cộng dồn số câu không?</p>
+          </div>
+          <div class="flex items-center gap-2 shrink-0">
+            <button type="button" onclick="confirmNicknameOwnership(true)"
+                    class="px-3 py-1.5 rounded-md bg-vtb-blue hover:bg-vtb-dark text-white font-semibold transition">
+              Đúng là tôi, thu tiếp
+            </button>
+            <button type="button" onclick="confirmNicknameOwnership(false)"
+                    class="px-3 py-1.5 rounded-md bg-white border border-amber-300 hover:bg-amber-100 text-amber-900 font-semibold transition">
+              Tôi là người khác, đổi tên
+            </button>
+          </div>
+        </div>
+      </section>
 
       <!-- Privacy Notice Collapsible -->
       <div id="privacy-drawer" class="hidden bg-slate-800 text-slate-200 rounded-xl p-4 text-xs leading-relaxed space-y-1.5 shadow-inner">
         <div class="font-semibold text-white flex items-center justify-between">
           <span>Quy chuẩn bảo mật dữ liệu nghiên cứu VietinBank ASR</span>
-          <button onclick="togglePrivacyInfo()" class="text-slate-400 hover:text-white">Đóng ✕</button>
+          <button type="button" onclick="togglePrivacyInfo()" class="text-slate-400 hover:text-white">Đóng ✕</button>
         </div>
-        <p>• <b>Lưu trữ nội bộ:</b> Tệp âm thanh được mã hóa và lưu trữ trong kho dữ liệu riêng tư phục vụ huấn luyện mô hình nhận dạng giọng nói.</p>
-        <p>• <b>Ẩn danh tuyệt đối:</b> Hệ thống không thu thập họ tên, email, số điện thoại hay bất kỳ thông tin định danh cá nhân nào.</p>
+        <p>• <b>Mục đích sử dụng:</b> Tệp âm thanh được lưu trữ riêng tư trong Hugging Face Storage Bucket bảo mật phục vụ huấn luyện mô hình nhận dạng giọng nói.</p>
+        <p>• <b>Quyền riêng tư:</b> Bạn có thể nhập Tên kèm SĐT/Mã NV để hệ thống ghi nhận lịch sử đóng góp theo phiên, hoặc để trống nếu muốn thu âm ẩn danh.</p>
       </div>
 
       <!-- EMPTY / ONBOARDING PLACEHOLDER -->
-      <div id="state-placeholder" class="bg-white rounded-xl border border-slate-200/90 shadow-sm p-10 text-center space-y-3">
+      <div id="state-placeholder" class="bg-white rounded-xl border border-slate-200 shadow-sm p-10 text-center space-y-3">
         <div class="w-12 h-12 rounded-full bg-vtb-light text-vtb-blue flex items-center justify-center mx-auto">
-          <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <svg class="w-6 h-6" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
             <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
             <path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/>
           </svg>
         </div>
-        <h3 class="text-base font-bold text-slate-800">Chào mừng bạn đến với Trạm Thu Âm Dữ Liệu Giọng Nói</h3>
+        <h2 class="text-base font-bold text-slate-800">Bắt đầu phiên thu âm giọng nói</h2>
         <p id="placeholder-text" class="text-sm text-slate-600 max-w-md mx-auto">
-          Vui lòng chọn <b>Giới tính giọng nói</b> trên thanh cấu hình phía trên để hệ thống phân bổ kịch bản phù hợp với đại từ xưng hô.
+          Vui lòng chọn <b>Giới tính giọng</b> ở mục cấu hình phía trên để hệ thống phân bổ kịch bản phù hợp.
         </p>
       </div>
 
@@ -157,11 +245,11 @@
       <div id="workspace" class="hidden space-y-4">
 
         <!-- TELEPROMPTER SCRIPT CARD -->
-        <section class="bg-white rounded-xl border border-slate-200/90 shadow-sm overflow-hidden">
+        <section id="script-card" class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
           <!-- Card Header: Metadata -->
           <div class="bg-slate-50 border-b border-slate-200 px-5 py-3 flex flex-wrap items-center justify-between gap-2">
             <div class="flex items-center gap-2.5">
-              <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Mã kịch bản</span>
+              <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Mã kịch bản</span>
               <span id="task-id" class="font-mono text-xs font-bold bg-vtb-blue text-white px-2.5 py-1 rounded tracking-wide">HNUM-0000</span>
             </div>
             <div class="flex items-center gap-2">
@@ -169,9 +257,9 @@
             </div>
           </div>
 
-          <!-- Director's Instruction Banner (Placed ABOVE script so reader sees how to act first) -->
+          <!-- Director's Instruction Banner -->
           <div class="bg-amber-50/90 border-b border-amber-200/80 px-5 py-3 flex items-start gap-3">
-            <svg class="w-4 h-4 text-amber-600 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg class="w-4 h-4 text-amber-600 shrink-0 mt-0.5" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
               <circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/>
             </svg>
             <div class="text-xs sm:text-sm">
@@ -180,25 +268,26 @@
             </div>
           </div>
 
-          <!-- Main Teleprompter Text -->
-          <div class="p-6 sm:p-8 bg-white">
+          <!-- Clean Reading Script with Subtle Studio Mic Watermark -->
+          <div class="p-6 sm:p-8 bg-white relative overflow-hidden">
+            
             <div class="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-2.5 flex items-center gap-1.5">
-              <svg class="w-3.5 h-3.5 text-vtb-blue" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <svg class="w-3.5 h-3.5 text-vtb-blue" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                 <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
               </svg>
-              <span>Nội dung cần đọc:</span>
+              <span>Nội dung kịch bản cần đọc to:</span>
             </div>
-            <blockquote id="reading-script" class="text-xl sm:text-[25px] font-semibold text-slate-900 leading-[1.6] tracking-tight pl-4 border-l-4 border-vtb-blue select-text">
+            <blockquote id="reading-script" class="text-xl sm:text-[25px] font-semibold text-slate-900 leading-[1.62] tracking-tight pl-4 border-l-4 border-vtb-blue select-text">
               Đang tải câu đọc...
             </blockquote>
           </div>
         </section>
 
         <!-- AUDIO DECK & CONTROLS -->
-        <section class="bg-white rounded-xl border border-slate-200/90 shadow-sm p-5 space-y-4">
+        <section class="bg-white rounded-xl border border-slate-200 shadow-sm p-5 space-y-4">
           <div class="flex items-center justify-between gap-2">
             <div class="flex items-center gap-2">
-              <span id="status-led" class="w-2.5 h-2.5 rounded-full bg-slate-300"></span>
+              <span id="status-led" class="w-2.5 h-2.5 rounded-full bg-slate-300 shrink-0"></span>
               <span id="rec-status" class="text-xs sm:text-sm font-medium text-slate-600">
                 Sẵn sàng thu âm — Nhấn nút Thu âm hoặc phím <kbd class="bg-slate-100 border-slate-300 text-slate-700">Space</kbd>
               </span>
@@ -220,39 +309,57 @@
             <canvas id="waveform-canvas" class="w-full h-14 block"></canvas>
           </div>
 
-          <!-- AUDIO PLAYBACK DECK (SHOWN AFTER RECORDING) -->
-          <div id="preview-box" class="hidden bg-vtb-light/60 border border-vtb-blue/20 rounded-lg p-3.5 space-y-2.5">
-            <div class="flex items-center justify-between text-xs">
-              <span class="font-semibold text-vtb-dark flex items-center gap-1.5">
-                <svg class="w-4 h-4 text-vtb-blue" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+          <!-- CUSTOM INTERACTIVE WAVEFORM SCRUBBER + ACOUSTIC QUALITY CHECK (IDEA 1 & IDEA 4) -->
+          <div id="preview-box" class="hidden bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
+            <div class="flex flex-wrap items-center justify-between gap-2 text-xs">
+              <div class="flex items-center gap-2">
+                <span class="font-bold text-slate-700">Nghe lại & Kiểm tra sóng âm:</span>
+                <span id="acoustic-badge" class="px-2 py-0.5 rounded font-mono text-[11px] font-semibold"></span>
+              </div>
+              <a id="download-link" href="#" download="recording.wav" class="font-semibold text-vtb-blue hover:underline flex items-center gap-1">
+                <svg class="w-3.5 h-3.5" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/>
                 </svg>
-                <span>Kiểm tra lại bản thu trước khi gửi:</span>
-              </span>
-              <a id="download-link" href="#" download="recording.wav" class="font-medium text-vtb-blue hover:underline flex items-center gap-1">
                 <span>Tải file .WAV</span>
               </a>
             </div>
-            <audio id="audio-player" controls class="w-full h-10"></audio>
+
+            <!-- Interactive Waveform Player Bar -->
+            <div class="flex items-center gap-3 bg-white border border-slate-200 rounded-lg p-2.5">
+              <button type="button" id="btn-play-preview" onclick="togglePreviewPlayback()" aria-label="Phát hoặc dừng bản thu"
+                      class="w-10 h-10 rounded-lg bg-vtb-blue hover:bg-vtb-dark text-white flex items-center justify-center shrink-0 transition focus-visible:ring-2 focus-visible:ring-vtb-blue">
+                <svg id="icon-play" class="w-4 h-4 ml-0.5" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                <svg id="icon-pause" class="w-4 h-4 hidden" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+              </button>
+
+              <div class="flex-1 min-w-0">
+                <canvas id="preview-wave-canvas" onclick="scrubPreviewWave(event)" class="w-full h-11 cursor-pointer block" title="Nhấn vào sóng âm để tua"></canvas>
+              </div>
+
+              <div id="preview-time-label" class="font-mono tabular-nums text-xs font-semibold text-slate-600 shrink-0 pr-1">
+                00:00 / 00:00
+              </div>
+            </div>
+            <audio id="audio-player" class="hidden"></audio>
           </div>
 
-          <!-- ALERT FEEDBACK -->
-          <div id="alert-box" class="hidden rounded-lg p-3 text-xs sm:text-sm font-medium"></div>
+          <!-- INLINE ALERT FEEDBACK -->
+          <div id="alert-box" role="alert" class="hidden rounded-lg p-3 text-xs sm:text-sm font-medium"></div>
 
           <!-- CONTROL BUTTON BAR -->
           <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 pt-1">
-            <!-- Record / Stop Button (VietinBank Red) -->
-            <button id="btn-record" onclick="toggleRecording()"
-                    class="sm:col-span-5 py-3 px-4 rounded-lg font-semibold text-sm text-white bg-vtb-red hover:bg-vtb-redHover transition flex items-center justify-center gap-2.5 shadow-sm">
+            <!-- Record / Stop Button -->
+            <button type="button" id="btn-record" onclick="toggleRecording()"
+                    class="sm:col-span-5 min-h-11 py-3 px-4 rounded-lg font-semibold text-sm text-white bg-vtb-red hover:bg-vtb-redHover active:scale-[0.99] transition flex items-center justify-center gap-2.5 shadow-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-vtb-red">
               <span id="btn-record-icon" class="w-2.5 h-2.5 rounded-full bg-white"></span>
               <span id="btn-record-text">Bắt đầu thu</span>
               <kbd class="bg-black/20 border-black/30 text-white/90 ml-1">Space</kbd>
             </button>
 
-            <!-- Submit Button (VietinBank Blue) -->
-            <button id="btn-submit" onclick="submitRecording()" disabled
-                    class="sm:col-span-5 py-3 px-4 rounded-lg font-semibold text-sm text-white bg-vtb-blue hover:bg-vtb-dark disabled:opacity-40 disabled:pointer-events-none transition flex items-center justify-center gap-2 shadow-sm">
-              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <!-- Submit Button -->
+            <button type="button" id="btn-submit" onclick="submitRecording()" disabled
+                    class="sm:col-span-5 min-h-11 py-3 px-4 rounded-lg font-semibold text-sm text-white bg-vtb-blue hover:bg-vtb-dark disabled:opacity-40 disabled:pointer-events-none active:scale-[0.99] transition flex items-center justify-center gap-2 shadow-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-vtb-blue">
+              <svg class="w-4 h-4 shrink-0" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                 <path d="M22 2 11 13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
               </svg>
               <span id="btn-submit-text">Gửi bản ghi</span>
@@ -260,8 +367,8 @@
             </button>
 
             <!-- Skip Button -->
-            <button id="btn-skip" onclick="skipTask()"
-                    class="sm:col-span-2 py-3 px-3 rounded-lg font-semibold text-xs sm:text-sm text-slate-600 bg-slate-100 hover:bg-slate-200 border border-slate-200/80 transition flex items-center justify-center gap-1">
+            <button type="button" id="btn-skip" onclick="skipTask()"
+                    class="sm:col-span-2 min-h-11 py-3 px-3 rounded-lg font-semibold text-xs sm:text-sm text-slate-600 bg-slate-100 hover:bg-slate-200 border border-slate-200/80 transition flex items-center justify-center gap-1 focus-visible:ring-2 focus-visible:ring-vtb-blue">
               <span>Bỏ qua</span>
             </button>
           </div>
@@ -270,9 +377,9 @@
     </div>
 
     <!-- FOOTER PROGRESS BAR -->
-    <footer class="bg-white rounded-xl border border-slate-200/90 shadow-sm px-5 py-3.5 space-y-2">
+    <footer class="bg-white rounded-xl border border-slate-200 shadow-sm px-5 py-3.5 space-y-2">
       <div class="flex justify-between items-center text-xs">
-        <span class="text-slate-500 font-medium">Tiến độ hoàn thành tập dữ liệu (<strong id="footer-dataset" class="text-slate-700 font-mono">--</strong>)</span>
+        <span class="text-slate-500 font-medium">Tiến độ toàn dự án (<strong id="footer-dataset" class="text-slate-700 font-mono">--</strong>)</span>
         <span id="footer-stats" class="font-mono tabular-nums font-bold text-vtb-blue">0 / 0 câu (0.0%)</span>
       </div>
       <div class="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
@@ -293,11 +400,15 @@ let state = {
   savedTaskId: sessionStorage.getItem("vtb_tab_task_id") || "",
   gender: localStorage.getItem("vtb_gender") || "",
   accent: localStorage.getItem("vtb_accent") || "bac",
+  speakerName: localStorage.getItem("vtb_speaker_name") || "",
+  confirmedNames: JSON.parse(localStorage.getItem("vtb_confirmed_names") || "[]"),
   dataset: "",
   currentTask: null,
   currentLease: null,
   idempotencyToken: "",
   wavBlob: null,
+  pcmSamples: null,
+  audioDuration: 0,
   isRecording: false,
   isSubmitting: false
 };
@@ -306,6 +417,23 @@ let mediaRecorder = null, audioChunks = [], micStream = null;
 let audioContext = null, analyser = null, animFrameId = null;
 let timerInterval = null, recordStartTime = 0;
 let waveHistory = [];
+let previewPeaks = [];
+let pendingCandidateName = "";
+
+function showToast(msg, type = "success") {
+  const container = document.getElementById("toast-container");
+  const el = document.createElement("div");
+  const bg = type === "success" ? "bg-slate-900 text-white border-l-4 border-l-emerald-400" :
+             type === "warn" ? "bg-amber-900 text-white border-l-4 border-l-amber-400" :
+             "bg-rose-900 text-white border-l-4 border-l-rose-400";
+  el.className = `${bg} px-4 py-2.5 rounded-lg shadow-lg text-xs font-semibold transition-all duration-200 pointer-events-auto`;
+  el.innerText = msg;
+  container.appendChild(el);
+  setTimeout(() => {
+    el.style.opacity = "0";
+    setTimeout(() => el.remove(), 200);
+  }, 3200);
+}
 
 function togglePrivacyInfo() {
   document.getElementById("privacy-drawer").classList.toggle("hidden");
@@ -320,6 +448,8 @@ function persistBrowserState() {
   }
   if (state.gender) localStorage.setItem("vtb_gender", state.gender);
   if (state.accent) localStorage.setItem("vtb_accent", state.accent);
+  localStorage.setItem("vtb_speaker_name", state.speakerName || "");
+  localStorage.setItem("vtb_confirmed_names", JSON.stringify(state.confirmedNames));
 }
 
 function showAlert(msg, type = "error") {
@@ -335,28 +465,106 @@ function showAlert(msg, type = "error") {
 
 function hideAlert() { document.getElementById("alert-box").classList.add("hidden"); }
 
-function updateProgressUI(activeDataset, summary) {
-  if (!summary) return;
-  document.getElementById("badge-dataset").innerText = activeDataset;
-  document.getElementById("footer-dataset").innerText = activeDataset;
-  const total = summary.total_tasks || 0;
-  const recorded = summary.recorded || 0;
-  const pct = total > 0 ? ((recorded / total) * 100).toFixed(1) : "0.0";
-  document.getElementById("footer-stats").innerText = `${recorded} / ${total} câu (${pct}%)`;
-  document.getElementById("footer-bar").style.width = `${Math.min(100, pct)}%`;
+function updateProgressUI(activeDataset, summary, speakerStats) {
+  if (summary) {
+    document.getElementById("badge-dataset").innerText = activeDataset;
+    document.getElementById("footer-dataset").innerText = activeDataset;
+    const total = summary.total_tasks || 0;
+    const recorded = summary.recorded || 0;
+    const pct = total > 0 ? ((recorded / total) * 100).toFixed(1) : "0.0";
+    document.getElementById("footer-stats").innerText = `${recorded} / ${total} câu (${pct}%)`;
+    document.getElementById("footer-bar").style.width = `${Math.min(100, pct)}%`;
+  }
+  if (speakerStats) {
+    const count = state.speakerName ? speakerStats.name_count : speakerStats.session_count;
+    const label = state.speakerName ? `${state.speakerName}: ${count} câu` : `${count} câu`;
+    const pill = document.getElementById("streak-pill");
+    document.getElementById("user-contribution-count").innerText = label;
+    pill.classList.remove("streak-pop");
+    void pill.offsetWidth;
+    pill.classList.add("streak-pop");
+  }
 }
 
 async function initApp() {
   document.getElementById("select-gender").value = state.gender;
   document.getElementById("select-accent").value = state.accent;
+  document.getElementById("input-nickname").value = state.speakerName;
 
-  const res = await fetch("/api/reader/init");
+  const qs = new URLSearchParams({
+    speaker_name: state.speakerName || "",
+    session_id: state.sessionId || ""
+  });
+  const res = await fetch(`/api/reader/init?${qs.toString()}`);
   const data = await res.json();
   state.dataset = data.active_dataset;
-  updateProgressUI(data.active_dataset, data.summary);
+  updateProgressUI(data.active_dataset, data.summary, data.speaker_stats);
 
   if (state.gender) {
     await allocateNextTask(state.savedTaskId || null);
+  }
+}
+
+// --- Kiểm tra trùng Nickname thông minh ---
+async function applyNickname() {
+  const rawInput = document.getElementById("input-nickname").value.trim();
+  document.getElementById("nickname-collision-box").classList.add("hidden");
+
+  if (!rawInput) {
+    state.speakerName = "";
+    persistBrowserState();
+    showToast("Đã chuyển sang chế độ thu âm ẩn danh.", "success");
+    return;
+  }
+
+  const norm = rawInput.toLowerCase();
+  const res = await fetch("/api/reader/check-nickname", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      dataset: state.dataset,
+      speaker_name: rawInput,
+      session_id: state.sessionId
+    })
+  });
+  const stats = await res.json();
+
+  if (stats.exists && !stats.owned_by_same_session && !state.confirmedNames.includes(norm)) {
+    pendingCandidateName = stats.display_name || rawInput;
+    document.getElementById("collision-title").innerText = `Biệt danh "${pendingCandidateName}" đã có trên hệ thống (${stats.name_count} câu đã thu)!`;
+    document.getElementById("nickname-collision-box").classList.remove("hidden");
+    return;
+  }
+
+  state.speakerName = stats.display_name || rawInput;
+  if (!state.confirmedNames.includes(norm)) state.confirmedNames.push(norm);
+  document.getElementById("input-nickname").value = state.speakerName;
+  persistBrowserState();
+  updateProgressUI(state.dataset, null, stats);
+  showToast(`Đã lưu biệt danh: ${state.speakerName}`, "success");
+}
+
+async function confirmNicknameOwnership(isSamePerson) {
+  document.getElementById("nickname-collision-box").classList.add("hidden");
+  if (isSamePerson) {
+    state.speakerName = pendingCandidateName;
+    const norm = state.speakerName.toLowerCase();
+    if (!state.confirmedNames.includes(norm)) state.confirmedNames.push(norm);
+    document.getElementById("input-nickname").value = state.speakerName;
+    persistBrowserState();
+    const res = await fetch("/api/reader/check-nickname", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ dataset: state.dataset, speaker_name: state.speakerName, session_id: state.sessionId })
+    });
+    const stats = await res.json();
+    updateProgressUI(state.dataset, null, stats);
+    showToast(`Đã liên kết! Các câu tiếp theo sẽ cộng dồn vào "${state.speakerName}".`, "success");
+  } else {
+    const inputEl = document.getElementById("input-nickname");
+    inputEl.value = `${pendingCandidateName}_02`;
+    inputEl.focus();
+    inputEl.select();
   }
 }
 
@@ -381,7 +589,6 @@ async function onProfileChange() {
   if (!state.gender) {
     document.getElementById("workspace").classList.add("hidden");
     document.getElementById("state-placeholder").classList.remove("hidden");
-    document.getElementById("placeholder-text").innerHTML = "Vui lòng chọn <b>Giới tính giọng nói</b> trên thanh cấu hình phía trên để hệ thống phân bổ kịch bản phù hợp.";
     return;
   }
   await allocateNextTask(null);
@@ -396,6 +603,7 @@ async function allocateNextTask(knownTaskId = null) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       session_id: state.sessionId,
+      speaker_name: state.speakerName || null,
       gender: state.gender,
       accent: state.accent,
       known_task_id: knownTaskId,
@@ -406,7 +614,7 @@ async function allocateNextTask(knownTaskId = null) {
 
   state.sessionId = data.session_id;
   state.dataset = data.active_dataset;
-  updateProgressUI(data.active_dataset, data.summary);
+  updateProgressUI(data.active_dataset, data.summary, data.speaker_stats);
 
   if (data.exhausted) {
     state.currentTask = null;
@@ -426,20 +634,35 @@ async function allocateNextTask(knownTaskId = null) {
   document.getElementById("state-placeholder").classList.add("hidden");
   document.getElementById("workspace").classList.remove("hidden");
 
+  // Card transition animation
+  const card = document.getElementById("script-card");
+  card.classList.remove("card-animate-in");
+  void card.offsetWidth;
+  card.classList.add("card-animate-in");
+
   document.getElementById("task-id").innerText = data.task.id;
-  document.getElementById("task-badge").innerText = `${data.task.domain} · ${data.task.scenario}`;
+  const dom = data.task.domain || "";
+  const domIcon = dom.includes("phone")
+    ? '<svg class="w-3.5 h-3.5 text-vtb-blue inline mr-1 -mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>'
+    : dom.includes("cccd")
+    ? '<svg class="w-3.5 h-3.5 text-vtb-blue inline mr-1 -mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>'
+    : '<svg class="w-3.5 h-3.5 text-vtb-blue inline mr-1 -mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>';
+  document.getElementById("task-badge").innerHTML = `${domIcon}${data.task.domain} · ${data.task.scenario}`;
   document.getElementById("reading-script").innerText = data.task.reading_script;
   document.getElementById("delivery-instruction").innerText = data.task.delivery_instruction;
 }
 
 function resetAudioState() {
   state.wavBlob = null;
+  state.pcmSamples = null;
+  const player = document.getElementById("audio-player");
+  player.pause();
+  player.src = "";
   document.getElementById("preview-box").classList.add("hidden");
   document.getElementById("live-visualizer-box").classList.add("hidden");
-  document.getElementById("audio-player").src = "";
   document.getElementById("btn-submit").disabled = true;
   document.getElementById("rec-timer").innerText = "00:00.0";
-  document.getElementById("status-led").className = "w-2.5 h-2.5 rounded-full bg-slate-300";
+  document.getElementById("status-led").className = "w-2.5 h-2.5 rounded-full bg-slate-300 shrink-0";
   document.getElementById("rec-status").innerHTML = 'Sẵn sàng thu âm — Nhấn nút Thu âm hoặc phím <kbd class="bg-slate-100 border-slate-300 text-slate-700">Space</kbd>';
   const btn = document.getElementById("btn-record");
   btn.classList.remove("recording-ring", "bg-slate-800");
@@ -484,17 +707,26 @@ async function toggleRecording() {
       document.getElementById("rec-status").innerText = "Đang chuẩn hóa âm thanh chuẩn 16kHz Mono PCM16...";
       try {
         const rawBlob = new Blob(audioChunks);
-        state.wavBlob = await convertBlobTo16kMonoWav(rawBlob);
+        const { wavBlob, samples, duration } = await convertBlobTo16kMonoWav(rawBlob);
+        state.wavBlob = wavBlob;
+        state.pcmSamples = samples;
+        state.audioDuration = duration;
         state.idempotencyToken = crypto.randomUUID ? crypto.randomUUID() : String(Date.now());
 
         const url = URL.createObjectURL(state.wavBlob);
-        document.getElementById("audio-player").src = url;
+        const player = document.getElementById("audio-player");
+        player.src = url;
         document.getElementById("download-link").href = url;
         document.getElementById("download-link").download = `${state.currentTask.id}.wav`;
+
+        // Acoustic Quality Pre-Check (Idea 4) & Custom Scrubber (Idea 1)
+        evaluateAcousticQuality(samples);
+        buildPreviewWaveform(samples, duration);
+
         document.getElementById("preview-box").classList.remove("hidden");
         document.getElementById("btn-submit").disabled = false;
-        document.getElementById("status-led").className = "w-2.5 h-2.5 rounded-full bg-emerald-500";
-        document.getElementById("rec-status").innerHTML = 'Đã thu xong — Nghe lại hoặc nhấn <kbd class="bg-slate-100 border-slate-300 text-slate-700">Enter</kbd> để Gửi bản ghi';
+        document.getElementById("status-led").className = "w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0";
+        document.getElementById("rec-status").innerHTML = 'Đã thu xong — Kiểm tra sóng âm hoặc nhấn <kbd class="bg-slate-100 border-slate-300 text-slate-700">Enter</kbd> để Gửi bản ghi';
       } catch (e) {
         showAlert("Không thể xử lý bản thu âm. Vui lòng thử thu lại.", "error");
       }
@@ -504,7 +736,7 @@ async function toggleRecording() {
     recordStartTime = performance.now();
     timerInterval = setInterval(updateTimer, 100);
 
-    document.getElementById("status-led").className = "w-2.5 h-2.5 rounded-full bg-vtb-red animate-ping";
+    document.getElementById("status-led").className = "w-2.5 h-2.5 rounded-full bg-vtb-red animate-ping shrink-0";
     const btn = document.getElementById("btn-record");
     btn.classList.add("recording-ring", "bg-slate-800");
     btn.classList.remove("bg-vtb-red");
@@ -523,6 +755,133 @@ async function toggleRecording() {
   }
 }
 
+// --- IDEA 4: Kiểm tra chất lượng tín hiệu âm thanh tự động (Peak & dB) ---
+function evaluateAcousticQuality(samples) {
+  let peak = 0;
+  let sumSq = 0;
+  for (let i = 0; i < samples.length; i++) {
+    const a = Math.abs(samples[i]);
+    if (a > peak) peak = a;
+    sumSq += a * a;
+  }
+  const rms = Math.sqrt(sumSq / Math.max(1, samples.length));
+  const db = rms > 0 ? Math.round(20 * Math.log10(rms)) : -60;
+  const badge = document.getElementById("acoustic-badge");
+
+  if (peak < 0.08 || db < -38) {
+    badge.className = "px-2.5 py-0.5 rounded font-mono text-[11px] font-semibold bg-amber-100 text-amber-800 border border-amber-300";
+    badge.innerText = `Tín hiệu hơi nhỏ (${db} dB) — Nên đọc to hơn`;
+  } else if (peak > 0.98) {
+    badge.className = "px-2.5 py-0.5 rounded font-mono text-[11px] font-semibold bg-rose-100 text-rose-800 border border-rose-300";
+    badge.innerText = `Âm lượng quá lớn (${db} dB) — Có thể bị rè`;
+  } else {
+    badge.className = "px-2.5 py-0.5 rounded font-mono text-[11px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-300";
+    badge.innerText = `Tín hiệu đạt chuẩn (${db} dB)`;
+  }
+}
+
+// --- IDEA 1: Custom Interactive Waveform Player ---
+function buildPreviewWaveform(samples, duration) {
+  const numBins = 72;
+  const blockSize = Math.max(1, Math.floor(samples.length / numBins));
+  previewPeaks = [];
+  let maxPeak = 0.01;
+  for (let i = 0; i < numBins; i++) {
+    let sum = 0;
+    const start = i * blockSize;
+    for (let j = 0; j < blockSize && (start + j) < samples.length; j++) {
+      sum += Math.abs(samples[start + j]);
+    }
+    const avg = sum / blockSize;
+    if (avg > maxPeak) maxPeak = avg;
+    previewPeaks.push(avg);
+  }
+  previewPeaks = previewPeaks.map(p => Math.max(0.08, p / maxPeak));
+
+  const player = document.getElementById("audio-player");
+  document.getElementById("icon-play").classList.remove("hidden");
+  document.getElementById("icon-pause").classList.add("hidden");
+  updatePreviewTimeLabel(0, duration);
+  requestAnimationFrame(() => renderPreviewWaveform(0));
+
+  player.ontimeupdate = () => {
+    const progress = duration > 0 ? player.currentTime / duration : 0;
+    renderPreviewWaveform(progress);
+    updatePreviewTimeLabel(player.currentTime, duration);
+  };
+  player.onended = () => {
+    document.getElementById("icon-play").classList.remove("hidden");
+    document.getElementById("icon-pause").classList.add("hidden");
+    renderPreviewWaveform(1);
+  };
+}
+
+function renderPreviewWaveform(progress = 0) {
+  const canvas = document.getElementById("preview-wave-canvas");
+  if (!canvas || !previewPeaks.length) return;
+  const dpr = window.devicePixelRatio || 1;
+  const W = canvas.clientWidth || 480;
+  const H = 44;
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  const ctx = canvas.getContext("2d");
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, W, H);
+
+  const gap = 3;
+  const n = previewPeaks.length;
+  const barW = Math.max(2.5, (W - gap * (n - 1)) / n);
+  const centerY = H / 2;
+
+  for (let i = 0; i < n; i++) {
+    const pct = i / n;
+    const h = Math.max(4, previewPeaks[i] * (H - 6));
+    const x = i * (barW + gap);
+    const y = centerY - h / 2;
+    ctx.fillStyle = pct <= progress ? "#DA2032" : "#005993";
+    ctx.globalAlpha = pct <= progress ? 1.0 : 0.45;
+    ctx.beginPath();
+    ctx.roundRect(x, y, barW, h, 2);
+    ctx.fill();
+  }
+}
+
+function togglePreviewPlayback() {
+  const player = document.getElementById("audio-player");
+  if (!player.src) return;
+  if (player.paused) {
+    player.play();
+    document.getElementById("icon-play").classList.add("hidden");
+    document.getElementById("icon-pause").classList.remove("hidden");
+  } else {
+    player.pause();
+    document.getElementById("icon-play").classList.remove("hidden");
+    document.getElementById("icon-pause").classList.add("hidden");
+  }
+}
+
+function scrubPreviewWave(e) {
+  const canvas = document.getElementById("preview-wave-canvas");
+  const player = document.getElementById("audio-player");
+  if (!player.src || !state.audioDuration) return;
+  const rect = canvas.getBoundingClientRect();
+  const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+  player.currentTime = ratio * state.audioDuration;
+  renderPreviewWaveform(ratio);
+  updatePreviewTimeLabel(player.currentTime, state.audioDuration);
+  if (player.paused) togglePreviewPlayback();
+}
+
+function updatePreviewTimeLabel(cur, tot) {
+  const fmt = s => {
+    const m = String(Math.floor(s / 60)).padStart(2, "0");
+    const sec = (s % 60).toFixed(1).padStart(4, "0");
+    return `${m}:${sec}`;
+  };
+  document.getElementById("preview-time-label").innerText = `${fmt(cur)} / ${fmt(tot)}`;
+}
+
+// --- Live Pill-Bar Voice Visualizer while recording ---
 function startLiveVoiceVisualizer() {
   const canvas = document.getElementById("waveform-canvas");
   const ctx = canvas.getContext("2d");
@@ -537,21 +896,6 @@ function startLiveVoiceVisualizer() {
   waveHistory = new Array(totalSlots).fill(0);
   let lastPushTime = 0;
   let lastVoiceDetected = 0;
-
-  function drawRoundedBar(x, y, w, h, r) {
-    ctx.beginPath();
-    ctx.moveTo(x + r, y);
-    ctx.lineTo(x + w - r, y);
-    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
-    ctx.lineTo(x + w, y + h - r);
-    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-    ctx.lineTo(x + r, y + h);
-    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
-    ctx.lineTo(x, y + r);
-    ctx.quadraticCurveTo(x, y, x + r, y);
-    ctx.closePath();
-    ctx.fill();
-  }
 
   function render(now) {
     if (!state.isRecording) return;
@@ -597,9 +941,7 @@ function startLiveVoiceVisualizer() {
       lastPushTime = now;
       waveHistory.push(level);
       const maxBars = Math.floor(cssWidth / step);
-      while (waveHistory.length > maxBars) {
-        waveHistory.shift();
-      }
+      while (waveHistory.length > maxBars) waveHistory.shift();
     }
 
     ctx.clearRect(0, 0, cssWidth, cssHeight);
@@ -611,12 +953,16 @@ function startLiveVoiceVisualizer() {
 
       if (val <= 0.02) {
         ctx.fillStyle = "#CBD5E1";
-        drawRoundedBar(x, centerY - 1.5, barWidth, 3, 1.5);
+        ctx.beginPath();
+        ctx.roundRect(x, centerY - 1.5, barWidth, 3, 1.5);
+        ctx.fill();
       } else {
         const h = Math.max(8, val * (cssHeight - 6));
         const y = centerY - h / 2;
         ctx.fillStyle = i >= waveHistory.length - 4 ? "#DA2032" : "#005993";
-        drawRoundedBar(x, y, barWidth, h, barWidth / 2);
+        ctx.beginPath();
+        ctx.roundRect(x, y, barWidth, h, barWidth / 2);
+        ctx.fill();
       }
     }
 
@@ -653,7 +999,12 @@ async function convertBlobTo16kMonoWav(blob) {
   source.connect(offlineCtx.destination);
   source.start(0);
   const renderedBuffer = await offlineCtx.startRendering();
-  return encodePCM16Wav(renderedBuffer.getChannelData(0), targetRate);
+  const samples = renderedBuffer.getChannelData(0);
+  return {
+    wavBlob: encodePCM16Wav(samples, targetRate),
+    samples: samples,
+    duration: renderedBuffer.duration
+  };
 }
 
 function encodePCM16Wav(samples, sampleRate) {
@@ -688,6 +1039,13 @@ async function submitRecording() {
   state.isSubmitting = true;
   hideAlert();
 
+  // Auto-save nickname if user typed one without clicking "Lưu tên"
+  const rawTypedName = document.getElementById("input-nickname").value.trim();
+  if (rawTypedName && !state.speakerName) {
+    state.speakerName = rawTypedName;
+    persistBrowserState();
+  }
+
   const btnSubmit = document.getElementById("btn-submit");
   const btnText = document.getElementById("btn-submit-text");
   btnSubmit.disabled = true;
@@ -700,6 +1058,7 @@ async function submitRecording() {
   formData.append("session_id", state.sessionId);
   formData.append("gender", state.gender);
   formData.append("accent", state.accent);
+  if (state.speakerName) formData.append("speaker_name", state.speakerName);
   formData.append("idempotency_token", state.idempotencyToken);
   formData.append("audio", state.wavBlob, `${state.currentTask.id}.wav`);
 
@@ -713,7 +1072,8 @@ async function submitRecording() {
       state.isSubmitting = false;
       return;
     }
-    updateProgressUI(state.dataset, data.summary);
+    showToast(`Đã lưu thành công câu ${state.currentTask.id}!`, "success");
+    updateProgressUI(state.dataset, data.summary, data.speaker_stats);
     state.isSubmitting = false;
     btnText.innerText = "Gửi bản ghi";
     await allocateNextTask(null);

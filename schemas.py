@@ -67,7 +67,6 @@ class ManifestItem(BaseModel):
         ..., description="Soft routing preference: male or female"
     )
 
-    # Optional fields from research metadata
     pair_id: Optional[str] = None
     number_pattern: Optional[str] = None
     target_digits: Optional[str] = None
@@ -113,13 +112,13 @@ class RecordingLease(BaseModel):
 
     lease_id: str
     session_id: str
+    speaker_name: Optional[str] = None
     speaker_gender: str
     accent: Optional[str] = None
     created_at: str = Field(default_factory=utc_now_iso)
     expires_at: str
 
     def is_expired(self, now: Optional[datetime] = None) -> bool:
-        """Check if lease has expired."""
         current = now or datetime.now(timezone.utc)
         try:
             exp = datetime.fromisoformat(self.expires_at)
@@ -134,6 +133,7 @@ class AudioMetadata(BaseModel):
     recording_id: str
     object_key: str
     speaker_id: str
+    speaker_name: Optional[str] = None
     voice_gender: str
     accent: Optional[str] = None
     sha256: str
@@ -165,7 +165,6 @@ class ReviewLease(BaseModel):
     expires_at: str
 
     def is_expired(self, now: Optional[datetime] = None) -> bool:
-        """Check if review lease has expired."""
         current = now or datetime.now(timezone.utc)
         try:
             exp = datetime.fromisoformat(self.expires_at)
@@ -179,6 +178,8 @@ class RejectionHistoryItem(BaseModel):
 
     recording_id: str
     object_key: str
+    speaker_id: Optional[str] = None
+    speaker_name: Optional[str] = None
     rejected_at: str
     reviewer_id: Optional[str] = None
     reviewer_name: Optional[str] = None
@@ -199,7 +200,6 @@ class TaskState(BaseModel):
     updated_at: str = Field(default_factory=utc_now_iso)
 
     def is_currently_available(self, now: Optional[datetime] = None) -> bool:
-        """A task is available if status is AVAILABLE, or RESERVED but lease expired."""
         if self.status == TaskStatus.RECORDED:
             return False
         if self.status == TaskStatus.AVAILABLE:
@@ -225,4 +225,3 @@ class DatasetsRegistry(BaseModel):
     active_dataset: str
     datasets: dict[str, DatasetConfig] = Field(default_factory=dict)
     updated_at: str = Field(default_factory=utc_now_iso)
-

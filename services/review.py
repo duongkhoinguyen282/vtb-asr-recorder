@@ -36,11 +36,6 @@ def claim_review_lease(
     reviewer_name: Optional[str] = None,
     ttl_seconds: int = DEFAULT_REVIEW_LEASE_TTL,
 ) -> Tuple[bool, str, Optional[ReviewLease]]:
-    """Acquire an exclusive review lease on a recorded task using CAS.
-
-    Allows concurrent admins to browse and listen read-only, but enforces exclusive
-    single-reviewer lock when committing decisions.
-    """
     st, etag = get_task_state(storage, dataset_name, task_id)
     if not st:
         return False, "Không tìm thấy trạng thái câu hỏi.", None
@@ -57,7 +52,6 @@ def claim_review_lease(
                 f"Câu này đang được kiểm duyệt bởi quản trị viên '{holder}'. Vui lòng thử lại sau.",
                 None,
             )
-        # Already held by this reviewer: renew
         lease_id = st.review_lease.lease_id
     else:
         lease_id = str(uuid.uuid4())
@@ -92,7 +86,6 @@ def release_review_lease(
     task_id: str,
     review_lease_id: str,
 ) -> bool:
-    """Release an active review lease."""
     st, etag = get_task_state(storage, dataset_name, task_id)
     if not st or not st.review_lease:
         return True
@@ -125,19 +118,13 @@ def approve_recording(
     verified_transcript: Optional[str] = None,
     expected_recording_id: Optional[str] = None,
 ) -> Tuple[bool, str]:
-    """Approve recording (Decision 1: Đạt, or Decision 2: Đạt, sửa text).
-
-    Verified via atomic CAS. Does not alter original reading_script.
-    """
     st, etag = get_task_state(storage, dataset_name, task_id)
     if not st or st.status != TaskStatus.RECORDED or not st.current_audio:
         return False, "Câu không tồn tại hoặc chưa có bản ghi."
 
-    # Validate audio version consistency
     if expected_recording_id and st.current_audio.recording_id != expected_recording_id:
         return False, "Bản ghi đã bị thay đổi hoặc thu lại bởi phiên khác."
 
-    # Validate lease
     now = datetime.now(timezone.utc)
     if not st.review_lease or st.review_lease.lease_id != review_lease_id or st.review_lease.is_expired(now):
         return False, "Phiên kiểm duyệt đã hết hạn hoặc không hợp lệ. Vui lòng tải lại trang."
@@ -152,7 +139,7 @@ def approve_recording(
         reviewer_name=reviewer_name,
         updated_at=utc_now_iso(),
     )
-    st.review_lease = None  # Release lease on decision
+    st.review_lease = None
     st.updated_at = utc_now_iso()
 
     key = _state_key(dataset_name, task_id)
@@ -179,11 +166,6 @@ def reject_recording(
     note: Optional[str] = None,
     expected_recording_id: Optional[str] = None,
 ) -> Tuple[bool, str]:
-    """Reject recording (Decision 3: Không đạt / Thu lại).
-
-    Reopens task back to Available. The task drops from Recorded count immediately.
-    Retains rejection history and error reasons for auditing.
-    """
     st, etag = get_task_state(storage, dataset_name, task_id)
     if not st or st.status != TaskStatus.RECORDED or not st.current_audio:
         return False, "Câu không tồn tại hoặc chưa có bản ghi."
@@ -197,10 +179,11 @@ def reject_recording(
 
     reasons = error_reasons or []
 
-    # Record in rejection history
     history_item = RejectionHistoryItem(
         recording_id=st.current_audio.recording_id,
         object_key=st.current_audio.object_key,
+        speaker_id=st.current_audio.speaker_id,
+        speaker_name=st.current_audio.speaker_name,
         rejected_at=utc_now_iso(),
         reviewer_id=reviewer_id,
         reviewer_name=reviewer_name,
@@ -209,7 +192,6 @@ def reject_recording(
     )
     st.rejection_history.append(history_item)
 
-    # Reopen task for recording: Available
     st.status = TaskStatus.AVAILABLE
     st.recording_lease = None
     st.review_lease = None
@@ -233,4 +215,3 @@ def reject_recording(
         return True, "Đã từ chối bản ghi và mở lại câu cho cộng tác viên thu lại."
     except StoragePreconditionFailedError:
         return False, "Xung đột ghi: Trạng thái câu đã bị thay đổi bởi thao tác khác."
-

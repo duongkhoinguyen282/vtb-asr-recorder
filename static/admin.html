@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/webp" href="/static/logo-vtb.webp" />
   <title>VietinBank Voice AI — Trung Tâm Quản Trị & Kiểm Duyệt QA</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -30,42 +31,86 @@
     }
   </script>
   <style>
-    body { font-family: 'Be Vietnam Pro', sans-serif; background-color: #F2F5F8; }
+    body { font-family: 'Be Vietnam Pro', sans-serif; background-color: #EEF3F8; position: relative; }
+    
+    /* Lớp nền ảnh tòa nhà tài chính VietinBank mờ ảo phía sau */
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: -2;
+      background-image:
+        linear-gradient(135deg, rgba(235, 243, 250, 0.86) 0%, rgba(224, 236, 248, 0.82) 50%, rgba(240, 245, 250, 0.88) 100%),
+        url('/static/bg-vtb.jpg'),
+        url('https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1920&q=80');
+      background-size: cover;
+      background-position: center;
+      filter: saturate(1.08);
+    }
     .tabular-nums { font-variant-numeric: tabular-nums; }
+    kbd {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      padding: 1px 5px;
+      border-radius: 4px;
+      border-bottom-width: 2px;
+    }
   </style>
 </head>
-<body class="text-slate-900 min-h-screen">
+<body class="text-slate-900 min-h-dvh">
+
+  <!-- TOAST NOTIFICATION CONTAINER -->
+  <div id="toast-container" aria-live="polite" class="fixed top-4 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
   <!-- ADMIN LOGIN SCREEN -->
-  <div id="login-screen" class="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-vtb-dark via-slate-900 to-vtb-blue">
-    <div class="max-w-md w-full bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden">
+  <div id="login-screen" class="min-h-dvh flex items-center justify-center p-4 relative overflow-hidden"
+       style="background-image: linear-gradient(135deg, rgba(0, 32, 63, 0.84) 0%, rgba(10, 25, 47, 0.88) 50%, rgba(0, 56, 101, 0.82) 100%), url('/static/bg-vtb.jpg'), url('https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1920&q=80'); background-size: cover; background-position: center;">
+
+    <!-- Quầng sáng Ambient Glow Đỏ & Xanh VietinBank phía sau hộp Login -->
+    <div class="absolute -top-24 -left-24 w-96 h-96 rounded-full bg-vtb-blue/30 blur-3xl pointer-events-none"></div>
+    <div class="absolute -bottom-24 -right-24 w-96 h-96 rounded-full bg-vtb-red/20 blur-3xl pointer-events-none"></div>
+
+    <!-- Đồ họa Sóng Âm & Vòng tròn AI chìm trên nền tối -->
+    <svg class="absolute inset-0 w-full h-full opacity-20 pointer-events-none" viewBox="0 0 1440 800" fill="none" preserveAspectRatio="none" aria-hidden="true">
+      <path d="M-100 420 C 280 260, 520 580, 920 380 C 1180 240, 1340 480, 1540 360" stroke="#38BDF8" stroke-width="2" fill="none"/>
+      <path d="M-100 480 C 340 620, 660 260, 1040 460 C 1260 560, 1380 340, 1540 420" stroke="#DA2032" stroke-width="2" fill="none"/>
+      <circle cx="220" cy="180" r="140" stroke="#FFFFFF" stroke-width="0.75" stroke-dasharray="6 6"/>
+      <circle cx="1240" cy="640" r="200" stroke="#38BDF8" stroke-width="0.75" stroke-dasharray="4 6"/>
+    </svg>
+    <div class="max-w-md w-full bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-white/20 overflow-hidden relative z-10">
       <div class="h-1.5 w-full bg-gradient-to-r from-vtb-red to-vtb-blue"></div>
-      <div class="p-8 space-y-6">
-        <div class="space-y-1.5">
-          <div class="flex items-center gap-2 text-vtb-blue font-bold text-sm uppercase tracking-wider">
-            <svg class="w-5 h-5 text-vtb-red" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-            </svg>
-            <span>VietinBank Data & AI Division</span>
+      <div class="p-8 space-y-6 relative z-10">
+        <div class="space-y-3">
+          <div class="flex items-center gap-3">
+            <div class="w-11 h-11 rounded-xl bg-slate-50 border border-slate-200 p-1.5 shadow-sm shrink-0 flex items-center justify-center">
+              <img src="/static/logo-vtb.webp" alt="VietinBank Logo" class="w-full h-full object-contain" />
+            </div>
+            <div>
+              <div class="flex items-center gap-1.5 text-vtb-blue font-bold text-[11px] uppercase tracking-wider">
+                <span>VietinBank Data & AI Division</span>
+              </div>
+              <h1 class="text-xl font-bold text-slate-900 tracking-tight">Quản Trị Hệ Thống Voice AI</h1>
+            </div>
           </div>
-          <h1 class="text-2xl font-bold text-slate-900">Quản Trị Hệ Thống Voice AI</h1>
-          <p class="text-xs text-slate-500">Xác thực quyền truy cập dành cho Quản trị viên & Kiểm duyệt viên QA</p>
+          <p class="text-xs text-slate-500 leading-relaxed border-t border-slate-100 pt-2.5">
+            Xác thực quyền truy cập dành cho Quản trị viên & Kiểm duyệt viên QA
+          </p>
         </div>
 
-        <div id="login-error" class="hidden bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium p-3 rounded-lg"></div>
+        <div id="login-error" role="alert" class="hidden bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium p-3 rounded-lg"></div>
 
         <form onsubmit="handleLogin(event)" class="space-y-4">
           <div>
-            <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Mật khẩu quản trị *</label>
-            <input id="login-pw" type="password" required placeholder="Nhập mật khẩu bảo mật..."
-                   class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-sm focus:border-vtb-blue focus:ring-2 focus:ring-vtb-blue/15 outline-none" />
+            <label for="login-pw" class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Mật khẩu quản trị *</label>
+            <input id="login-pw" type="password" autocomplete="current-password" required placeholder="Nhập mật khẩu bảo mật..."
+                   class="w-full h-10 px-3.5 rounded-lg border border-slate-300 text-sm focus:border-vtb-blue focus:ring-2 focus:ring-vtb-blue/15 outline-none" />
           </div>
           <div>
-            <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Định danh Kiểm duyệt viên (Reviewer)</label>
-            <input id="login-name" type="text" placeholder="VD: nguyen_dk, QA_Team_01..."
-                   class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-sm focus:border-vtb-blue focus:ring-2 focus:ring-vtb-blue/15 outline-none" />
+            <label for="login-name" class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Định danh Kiểm duyệt viên (Reviewer)</label>
+            <input id="login-name" type="text" placeholder="VD: sonchuate, QA_Team_01..."
+                   class="w-full h-10 px-3.5 rounded-lg border border-slate-300 text-sm focus:border-vtb-blue focus:ring-2 focus:ring-vtb-blue/15 outline-none" />
           </div>
-          <button type="submit" class="w-full py-3 bg-vtb-blue hover:bg-vtb-dark text-white font-semibold text-sm rounded-lg transition shadow-sm">
+          <button type="submit" class="w-full min-h-11 py-2.5 bg-vtb-blue hover:bg-vtb-dark text-white font-semibold text-sm rounded-lg transition shadow-sm">
             Truy cập Bảng Quản Trị
           </button>
         </form>
@@ -74,29 +119,26 @@
   </div>
 
   <!-- MAIN ADMIN CONSOLE -->
-  <div id="admin-app" class="hidden min-h-screen flex flex-col">
+  <div id="admin-app" class="hidden min-h-dvh flex flex-col">
 
     <!-- Enterprise Header -->
-    <header class="bg-vtb-dark text-white shadow">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 h-15 py-3 flex flex-wrap items-center justify-between gap-3">
+    <header class="bg-vtb-dark text-white shadow relative z-20">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
         <div class="flex items-center space-x-3">
-          <div class="w-8 h-8 rounded bg-white text-vtb-blue flex items-center justify-center font-bold text-sm shadow-sm relative overflow-hidden">
-            <div class="absolute top-0 inset-x-0 h-1 bg-vtb-red"></div>
-            <span class="mt-0.5">VTB</span>
-          </div>
+          <div class="w-9 h-9 bg-white p-1 rounded-lg shadow-sm shrink-0 flex items-center justify-center"><img src="/static/logo-vtb.webp" alt="VietinBank Logo" class="w-full h-full object-contain" /></div>
           <div>
-            <h1 class="font-bold text-sm sm:text-base leading-tight">VietinBank ASR — Trung Tâm Quản Trị & QA</h1>
-            <p class="text-[11px] text-sky-300">Quản lý tập kịch bản & Kiểm định chất lượng dữ liệu giọng nói</p>
+            <h1 class="font-bold text-sm sm:text-base leading-tight">VietinBank ASR — Trung Tâm Quản Trị & Kiểm Duyệt QA</h1>
+            <p class="text-[11px] text-sky-300">Quản lý kịch bản, thống kê cộng tác viên & kiểm định chất lượng dữ liệu giọng nói</p>
           </div>
         </div>
 
-        <div class="flex items-center space-x-3 text-xs">
+        <div class="flex items-center space-x-2.5 text-xs">
           <span id="admin-user-label" class="bg-white/10 border border-white/15 px-3 py-1.5 rounded-md font-mono">--</span>
           <a href="/" target="_blank" class="px-3 py-1.5 rounded-md bg-white/10 hover:bg-white/20 text-white font-medium transition flex items-center gap-1">
             <span>Trạm Thu Âm</span>
-            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7"/><path d="M7 7h10v10"/></svg>
+            <svg class="w-3.5 h-3.5" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M7 17L17 7"/><path d="M7 7h10v10"/></svg>
           </a>
-          <button onclick="handleLogout()" class="bg-vtb-red hover:bg-vtb-redHover px-3 py-1.5 rounded-md font-semibold transition">
+          <button type="button" onclick="handleLogout()" class="bg-vtb-red hover:bg-vtb-redHover px-3 py-1.5 rounded-md font-semibold transition">
             Đăng xuất
           </button>
         </div>
@@ -104,14 +146,14 @@
       <div class="h-0.5 w-full bg-gradient-to-r from-vtb-red to-vtb-blue"></div>
     </header>
 
-    <main class="max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 space-y-5 flex-1">
+    <main class="max-w-7xl w-full mx-auto px-4 sm:px-6 py-5 space-y-5 flex-1">
 
       <!-- DATASET CONTROL BAR -->
-      <section class="bg-white rounded-xl border border-slate-200/90 shadow-sm p-4 flex flex-wrap items-center justify-between gap-4">
+      <section class="bg-white rounded-xl border border-slate-200 shadow-sm p-4 flex flex-wrap items-center justify-between gap-4">
         <div class="flex flex-wrap items-center gap-3 flex-1 min-w-[280px]">
-          <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Dataset:</span>
+          <label for="ds-selector" class="text-xs font-bold uppercase tracking-wider text-slate-500">Dataset:</label>
           <select id="ds-selector" onchange="onSwitchDataset()"
-                  class="px-3.5 py-2 rounded-lg border border-slate-300 bg-slate-50 font-semibold text-sm text-slate-900 focus:border-vtb-blue outline-none min-w-[260px]">
+                  class="h-10 px-3.5 rounded-lg border border-slate-300 bg-slate-50 font-semibold text-sm text-slate-900 focus:border-vtb-blue outline-none min-w-[260px]">
           </select>
           <span id="ds-active-badge" class="hidden px-2.5 py-1 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-semibold">
             ● Đang thu chính thức
@@ -119,17 +161,17 @@
         </div>
 
         <div class="flex flex-wrap items-center gap-2.5">
-          <button id="btn-set-active" onclick="activateSelectedDataset()"
-                  class="hidden px-3.5 py-2 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold transition shadow-sm">
+          <button type="button" id="btn-set-active" onclick="activateSelectedDataset()"
+                  class="hidden h-10 px-3.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold transition shadow-sm">
             Đặt làm Dataset thu âm chính thức
           </button>
-          <button onclick="toggleAddModal(true)"
-                  class="px-3.5 py-2 rounded-lg bg-vtb-blue hover:bg-vtb-dark text-white text-xs font-semibold transition shadow-sm flex items-center gap-1.5">
-            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" x2="12" y1="5" y2="19"/><line x1="5" x2="19" y1="12" y2="12"/></svg>
+          <button type="button" onclick="toggleAddModal(true)"
+                  class="h-10 px-3.5 rounded-lg bg-vtb-blue hover:bg-vtb-dark text-white text-xs font-semibold transition shadow-sm flex items-center gap-1.5">
+            <svg class="w-4 h-4" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="12" x2="12" y1="5" y2="19"/><line x1="5" x2="19" y1="12" y2="12"/></svg>
             <span>Tạo Dataset mới (.jsonl)</span>
           </button>
-          <button onclick="loadOverview()" class="px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition">
-            Làm mới dữ liệu
+          <button type="button" onclick="loadOverview()" class="h-10 px-3 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition">
+            Làm mới
           </button>
         </div>
       </section>
@@ -141,80 +183,80 @@
             <h3 class="font-bold text-base text-vtb-blue">Khởi Tạo Tập Dữ Liệu Kịch Bản Mới</h3>
             <p class="text-xs text-slate-500">Hệ thống sẽ kiểm tra cấu trúc JSONL và cặp đối chứng trước khi lưu vào Bucket.</p>
           </div>
-          <button onclick="toggleAddModal(false)" class="text-xs font-bold text-slate-400 hover:text-slate-700">Đóng ✕</button>
+          <button type="button" onclick="toggleAddModal(false)" class="text-xs font-bold text-slate-400 hover:text-slate-700">Đóng ✕</button>
         </div>
-        <div id="create-ds-alert" class="hidden p-3 rounded-lg text-xs"></div>
+        <div id="create-ds-alert" role="alert" class="hidden p-3 rounded-lg text-xs"></div>
         <form onsubmit="handleCreateDataset(event)" class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
           <div>
-            <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Mã định danh (Slug) *</label>
-            <input id="new-ds-slug" type="text" required placeholder="VD: numeric-data-v2" class="w-full px-3 py-2 rounded-lg border border-slate-300 font-mono text-xs" />
+            <label for="new-ds-slug" class="block text-xs font-bold uppercase text-slate-600 mb-1">Mã định danh (Slug) *</label>
+            <input id="new-ds-slug" type="text" required placeholder="VD: numeric-data-v2" class="w-full h-10 px-3 rounded-lg border border-slate-300 font-mono text-xs" />
           </div>
           <div>
-            <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Tên hiển thị *</label>
-            <input id="new-ds-name" type="text" required placeholder="VD: Tập kịch bản đọc số đợt 2" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs" />
+            <label for="new-ds-name" class="block text-xs font-bold uppercase text-slate-600 mb-1">Tên hiển thị *</label>
+            <input id="new-ds-name" type="text" required placeholder="VD: Tập kịch bản đọc số đợt 2" class="w-full h-10 px-3 rounded-lg border border-slate-300 text-xs" />
           </div>
           <div class="md:col-span-2">
-            <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Mô tả chi tiết</label>
-            <input id="new-ds-desc" type="text" placeholder="Ghi chú phạm vi kịch bản..." class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs" />
+            <label for="new-ds-desc" class="block text-xs font-bold uppercase text-slate-600 mb-1">Mô tả chi tiết</label>
+            <input id="new-ds-desc" type="text" placeholder="Ghi chú phạm vi kịch bản..." class="w-full h-10 px-3 rounded-lg border border-slate-300 text-xs" />
           </div>
           <div class="md:col-span-2">
-            <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Tệp kịch bản (.jsonl) *</label>
+            <label for="new-ds-file" class="block text-xs font-bold uppercase text-slate-600 mb-1">Tệp kịch bản (.jsonl) *</label>
             <input id="new-ds-file" type="file" accept=".jsonl,.txt" required
                    class="w-full text-xs file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-vtb-light file:text-vtb-blue file:font-semibold" />
           </div>
           <div class="md:col-span-2 flex gap-2.5 pt-1">
-            <button type="submit" class="px-5 py-2 bg-vtb-blue text-white text-xs font-bold rounded-lg">Xác thực & Tạo Dataset</button>
-            <button type="button" onclick="toggleAddModal(false)" class="px-4 py-2 bg-slate-100 text-slate-600 text-xs font-semibold rounded-lg">Hủy</button>
+            <button type="submit" class="px-5 py-2.5 bg-vtb-blue text-white text-xs font-bold rounded-lg">Xác thực & Tạo Dataset</button>
+            <button type="button" onclick="toggleAddModal(false)" class="px-4 py-2.5 bg-slate-100 text-slate-600 text-xs font-semibold rounded-lg">Hủy</button>
           </div>
         </form>
       </div>
 
       <!-- NAVIGATION TABS -->
       <div class="flex border-b border-slate-300 gap-1">
-        <button id="tab-btn-dash" onclick="switchTab('dash')"
+        <button type="button" id="tab-btn-dash" onclick="switchTab('dash')"
                 class="px-5 py-2.5 font-bold text-xs uppercase tracking-wider rounded-t-lg bg-white text-vtb-blue border border-b-0 border-slate-300">
-          Tổng quan & Thống kê (Dashboard)
+          Tổng quan & Bảng Xếp Hạng (Dashboard)
         </button>
-        <button id="tab-btn-rev" onclick="switchTab('rev')"
+        <button type="button" id="tab-btn-rev" onclick="switchTab('rev')"
                 class="px-5 py-2.5 font-bold text-xs uppercase tracking-wider rounded-t-lg bg-slate-200/70 text-slate-600 hover:bg-white">
           Bàn Kiểm Duyệt QA (Workbench)
         </button>
       </div>
 
-      <!-- TAB 1: EXECUTIVE DASHBOARD -->
+      <!-- TAB 1: EXECUTIVE DASHBOARD & CONTRIBUTOR LEADERBOARD -->
       <div id="tab-dash" class="space-y-5">
         <!-- 5 KPI Metric Cards -->
         <div class="grid grid-cols-2 sm:grid-cols-5 gap-3.5">
-          <div class="bg-white p-4 rounded-xl border border-slate-200/90 shadow-sm">
+          <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
             <div class="text-[11px] text-slate-500 font-bold uppercase tracking-wider">Tổng kịch bản</div>
             <div id="m-total" class="font-mono tabular-nums text-2xl font-bold text-slate-900 mt-1">0</div>
           </div>
-          <div class="bg-white p-4 rounded-xl border border-slate-200/90 shadow-sm border-l-4 border-l-vtb-blue">
+          <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm border-l-4 border-l-vtb-blue">
             <div class="text-[11px] text-slate-500 font-bold uppercase tracking-wider">Đã thu âm</div>
             <div id="m-recorded" class="font-mono tabular-nums text-2xl font-bold text-vtb-blue mt-1">0</div>
           </div>
-          <div class="bg-white p-4 rounded-xl border border-slate-200/90 shadow-sm">
+          <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
             <div class="text-[11px] text-slate-500 font-bold uppercase tracking-wider">Chưa thu / Đang giữ</div>
             <div id="m-unrecorded" class="font-mono tabular-nums text-2xl font-bold text-amber-600 mt-1">0</div>
           </div>
-          <div class="bg-white p-4 rounded-xl border border-slate-200/90 shadow-sm border-l-4 border-l-vtb-red">
+          <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm border-l-4 border-l-vtb-red">
             <div class="text-[11px] text-slate-500 font-bold uppercase tracking-wider">Chờ duyệt QA</div>
             <div id="m-unchecked" class="font-mono tabular-nums text-2xl font-bold text-vtb-red mt-1">0</div>
           </div>
-          <div class="bg-white p-4 rounded-xl border border-slate-200/90 shadow-sm border-l-4 border-l-emerald-600">
+          <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm border-l-4 border-l-emerald-600">
             <div class="text-[11px] text-slate-500 font-bold uppercase tracking-wider">Đã duyệt chuẩn</div>
             <div id="m-approved" class="font-mono tabular-nums text-2xl font-bold text-emerald-600 mt-1">0</div>
           </div>
         </div>
 
-        <!-- Visual Breakdowns: Gender Bar & Scenario Distribution -->
+        <!-- Visual Breakdowns: Gender Bar & Scenario Horizontal Bars -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div class="bg-white p-5 rounded-xl border border-slate-200/90 shadow-sm space-y-3">
+          <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-3">
             <div class="flex justify-between items-center">
               <h3 class="font-bold text-xs uppercase tracking-wider text-slate-500">Cơ cấu giới tính giọng đọc đã thu</h3>
               <span id="gender-ratio-label" class="font-mono text-xs text-slate-500">Nam: 0 · Nữ: 0</span>
             </div>
-            <div class="w-full h-3 bg-slate-100 rounded-full overflow-hidden flex">
+            <div class="w-full h-3.5 bg-slate-100 rounded-full overflow-hidden flex">
               <div id="bar-male" class="h-full bg-vtb-blue transition-all" style="width: 50%"></div>
               <div id="bar-female" class="h-full bg-vtb-red transition-all" style="width: 50%"></div>
             </div>
@@ -224,18 +266,48 @@
             </div>
           </div>
 
-          <div class="bg-white p-5 rounded-xl border border-slate-200/90 shadow-sm space-y-3">
+          <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-3">
             <h3 class="font-bold text-xs uppercase tracking-wider text-slate-500">Phân bổ theo kịch bản (Scenario)</h3>
-            <div id="m-scenarios" class="flex flex-wrap gap-2 text-xs"></div>
+            <div id="m-scenarios" class="space-y-2 text-xs"></div>
+          </div>
+        </div>
+
+        <!-- CONTRIBUTOR LEADERBOARD TABLE (FOR REWARDS / GIFTS) -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          <div class="px-5 py-3.5 border-b border-slate-200 flex flex-wrap justify-between items-center gap-2 bg-slate-50/70">
+            <div class="flex items-center gap-2">
+              <svg class="w-4 h-4 text-amber-500" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>
+              </svg>
+              <h3 class="font-bold text-sm text-slate-800">Bảng Thống Kê Đóng Góp Theo Người Đọc</h3>
+            </div>
+            <span class="text-xs text-slate-500">Tính cả số lượng bản ghi và tỷ lệ đạt chuẩn QA</span>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr class="border-b border-slate-200 bg-slate-50 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                  <th class="py-2.5 px-4">Hạng</th>
+                  <th class="py-2.5 px-4">Định danh người đọc (Tên / SĐT / Mã NV)</th>
+                  <th class="py-2.5 px-4 text-right">Đã thu (Hợp lệ)</th>
+                  <th class="py-2.5 px-4 text-right">Tổng thời lượng</th>
+                  <th class="py-2.5 px-4 text-right">Đạt QA</th>
+                  <th class="py-2.5 px-4 text-right">Chờ duyệt</th>
+                  <th class="py-2.5 px-4 text-right">Bị từ chối</th>
+                  <th class="py-2.5 px-4 text-right">Tỷ lệ Đạt</th>
+                </tr>
+              </thead>
+              <tbody id="leaderboard-body" class="divide-y divide-slate-100 font-medium"></tbody>
+            </table>
           </div>
         </div>
 
         <!-- Quick Recorded Table -->
-        <div class="bg-white rounded-xl border border-slate-200/90 shadow-sm overflow-hidden">
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
           <div class="px-5 py-3.5 border-b border-slate-200 flex flex-wrap justify-between items-center gap-3">
-            <h3 class="font-bold text-sm text-slate-800">Danh mục các bản ghi âm gần nhất</h3>
-            <input id="dash-search" type="text" oninput="renderDashboardList()" placeholder="Lọc theo mã câu (HNUM-...)..."
-                   class="px-3 py-1.5 rounded-lg border border-slate-300 text-xs font-mono w-60 outline-none focus:border-vtb-blue" />
+            <h3 class="font-bold text-sm text-slate-800">Danh mục các bản ghi âm hiện có</h3>
+            <input id="dash-search" type="text" oninput="renderDashboardList()" placeholder="Lọc theo mã câu hoặc tên người đọc..."
+                   class="h-9 px-3 rounded-lg border border-slate-300 text-xs font-mono w-64 outline-none focus:border-vtb-blue" />
           </div>
           <div id="dash-list" class="divide-y divide-slate-100 max-h-[420px] overflow-y-auto"></div>
         </div>
@@ -246,22 +318,22 @@
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
 
           <!-- LEFT PANE: FILTERABLE QUEUE LIST (4 COLS) -->
-          <div class="lg:col-span-4 bg-white rounded-xl border border-slate-200/90 shadow-sm overflow-hidden flex flex-col max-h-[680px]">
+          <div class="lg:col-span-4 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col max-h-[700px]">
             <div class="p-3.5 bg-slate-50 border-b border-slate-200 space-y-2.5">
               <div class="flex items-center justify-between">
                 <span class="text-xs font-bold uppercase tracking-wider text-slate-600">Hàng đợi kiểm duyệt</span>
                 <span id="queue-count" class="font-mono text-xs font-bold px-2 py-0.5 rounded bg-vtb-light text-vtb-blue">0</span>
               </div>
-              <input id="rev-search" type="text" oninput="applyReviewFilters()" placeholder="Tìm mã HNUM-..."
-                     class="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs font-mono outline-none focus:border-vtb-blue" />
+              <input id="rev-search" type="text" oninput="applyReviewFilters()" placeholder="Tìm mã HNUM-... hoặc tên người đọc"
+                     class="w-full h-9 px-3 rounded-lg border border-slate-300 text-xs font-mono outline-none focus:border-vtb-blue" />
               <div class="grid grid-cols-2 gap-2">
-                <select id="rev-filter-status" onchange="applyReviewFilters()" class="px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs font-semibold">
+                <select id="rev-filter-status" onchange="applyReviewFilters()" class="h-9 px-2.5 rounded-lg border border-slate-300 text-xs font-semibold">
                   <option value="ALL">Tất cả trạng thái</option>
                   <option value="unchecked" selected>Chờ duyệt</option>
                   <option value="approved">Đã duyệt chuẩn</option>
                   <option value="approved_edited">Đã sửa text</option>
                 </select>
-                <select id="rev-filter-gender" onchange="applyReviewFilters()" class="px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs font-semibold">
+                <select id="rev-filter-gender" onchange="applyReviewFilters()" class="h-9 px-2.5 rounded-lg border border-slate-300 text-xs font-semibold">
                   <option value="ALL">Mọi giới tính</option>
                   <option value="male">Giọng Nam</option>
                   <option value="female">Giọng Nữ</option>
@@ -269,7 +341,6 @@
               </div>
             </div>
 
-            <!-- Scrollable Task Queue -->
             <div id="rev-queue-list" class="divide-y divide-slate-100 overflow-y-auto flex-1"></div>
           </div>
 
@@ -279,14 +350,21 @@
               Không có bản ghi nào trong danh sách lọc hiện tại.
             </div>
 
-            <div id="rev-workstation" class="bg-white rounded-xl border border-slate-200/90 shadow-sm overflow-hidden space-y-5 p-6">
+            <div id="rev-workstation" class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden space-y-5 p-6">
               <div class="flex flex-wrap justify-between items-center border-b border-slate-200 pb-3.5 gap-2">
                 <div class="flex items-center gap-2.5">
                   <span id="rev-task-id" class="font-mono text-lg font-bold text-vtb-blue">HNUM-0000</span>
                   <span id="rev-status-badge" class="text-[11px] px-2.5 py-0.5 rounded font-bold uppercase tracking-wider"></span>
                 </div>
-                <div id="rev-meta" class="font-mono text-xs text-slate-500"></div>
+                <div class="flex items-center gap-3">
+                  <label class="flex items-center gap-1.5 text-xs font-semibold text-slate-600 cursor-pointer select-none">
+                    <input id="chk-autoplay" type="checkbox" checked class="rounded text-vtb-blue" />
+                    <span>Tự động phát khi chuyển câu</span>
+                  </label>
+                </div>
               </div>
+
+              <div id="rev-meta" class="font-mono text-xs text-slate-600 bg-slate-100 px-3.5 py-2 rounded-lg"></div>
 
               <!-- Script & Instruction -->
               <div class="space-y-3">
@@ -299,24 +377,38 @@
                 </div>
               </div>
 
-              <!-- Audio Player Bar -->
-              <div class="bg-slate-900 text-white p-3.5 rounded-lg flex flex-col sm:flex-row items-center gap-3">
-                <span class="text-xs font-mono uppercase tracking-wider text-sky-300 shrink-0">Bản thu WAV:</span>
-                <audio id="rev-audio" controls class="w-full h-9"></audio>
+              <!-- Custom Waveform Scrubbing Audio Player for Admin (Idea 1 & 6) -->
+              <div class="bg-slate-900 text-white p-4 rounded-xl space-y-2">
+                <div class="flex items-center justify-between text-xs">
+                  <span class="font-mono uppercase tracking-wider text-sky-300">Sóng âm bản thu (Nhấn Space để Nghe/Dừng):</span>
+                  <span id="rev-time-label" class="font-mono tabular-nums text-slate-300">00:00 / 00:00</span>
+                </div>
+                <div class="flex items-center gap-3">
+                  <button type="button" onclick="toggleAdminAudio()" aria-label="Phát hoặc dừng bản thu"
+                          class="w-10 h-10 rounded-lg bg-vtb-blue hover:bg-sky-500 text-white flex items-center justify-center shrink-0 transition">
+                    <svg id="rev-icon-play" class="w-4 h-4 ml-0.5" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                    <svg id="rev-icon-pause" class="w-4 h-4 hidden" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+                  </button>
+                  <canvas id="rev-wave-canvas" onclick="scrubAdminWave(event)" class="w-full h-12 cursor-pointer block"></canvas>
+                </div>
+                <audio id="rev-audio" class="hidden"></audio>
               </div>
 
-              <div id="rev-feedback" class="hidden p-3 rounded-lg text-xs font-semibold"></div>
+              <div id="rev-feedback" role="alert" class="hidden p-3 rounded-lg text-xs font-semibold"></div>
 
-              <!-- 3 QA Decision Columns -->
+              <!-- 3 QA Decision Columns with Keyboard Shortcuts -->
               <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-1">
                 <!-- Decision 1: Approve -->
                 <div class="border border-emerald-200 bg-emerald-50/40 rounded-xl p-4 flex flex-col justify-between space-y-4">
                   <div>
-                    <h4 class="font-bold text-sm text-emerald-900">1. Đạt Chuẩn</h4>
+                    <div class="flex items-center justify-between">
+                      <h4 class="font-bold text-sm text-emerald-900">1. Đạt Chuẩn</h4>
+                      <kbd class="bg-emerald-100 border-emerald-300 text-emerald-900">Phím 1</kbd>
+                    </div>
                     <p class="text-xs text-slate-600 mt-1">Âm thanh rõ, đọc đúng số và ngữ điệu kịch bản gốc.</p>
                   </div>
-                  <button onclick="submitReviewDecision('approve')"
-                          class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-lg shadow-sm transition">
+                  <button type="button" onclick="submitReviewDecision('approve')"
+                          class="w-full min-h-10 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-lg shadow-sm transition">
                     Xác nhận Đạt chuẩn
                   </button>
                 </div>
@@ -324,13 +416,16 @@
                 <!-- Decision 2: Approve Edited -->
                 <div class="border border-sky-200 bg-sky-50/40 rounded-xl p-4 flex flex-col justify-between space-y-3">
                   <div class="space-y-1.5">
-                    <h4 class="font-bold text-sm text-vtb-dark">2. Đạt (Sửa Transcript)</h4>
-                    <p class="text-[11px] text-slate-600">Âm thanh đạt nhưng từ ngữ phát âm thực tế khác kịch bản:</p>
+                    <div class="flex items-center justify-between">
+                      <h4 class="font-bold text-sm text-vtb-dark">2. Đạt (Sửa Text)</h4>
+                      <kbd class="bg-sky-100 border-sky-300 text-vtb-dark">Phím 2</kbd>
+                    </div>
+                    <p class="text-[11px] text-slate-600">Âm thanh đạt nhưng từ ngữ thực tế khác kịch bản:</p>
                     <textarea id="rev-edit-text" rows="3"
                               class="w-full p-2 text-xs rounded-lg border border-slate-300 focus:border-vtb-blue outline-none"></textarea>
                   </div>
-                  <button onclick="submitReviewDecision('approve_edited')"
-                          class="w-full py-2.5 bg-vtb-blue hover:bg-vtb-dark text-white font-semibold text-xs rounded-lg shadow-sm transition">
+                  <button type="button" onclick="submitReviewDecision('approve_edited')"
+                          class="w-full min-h-10 py-2.5 bg-vtb-blue hover:bg-vtb-dark text-white font-semibold text-xs rounded-lg shadow-sm transition">
                     Duyệt & Lưu văn bản sửa
                   </button>
                 </div>
@@ -338,7 +433,7 @@
                 <!-- Decision 3: Reject & Reopen -->
                 <div class="border border-rose-200 bg-rose-50/40 rounded-xl p-4 flex flex-col justify-between space-y-3">
                   <div class="space-y-2">
-                    <h4 class="font-bold text-sm text-rose-900">3. Từ chối (Mở thu lại)</h4>
+                    <h4 class="font-bold text-sm text-rose-900">3. Từ chối (Thu lại)</h4>
                     <div id="rev-reasons" class="grid grid-cols-2 gap-1 text-[11px] text-slate-700">
                       <label class="flex items-center gap-1"><input type="checkbox" value="Ồn / khó nghe"> Ồn/khó nghe</label>
                       <label class="flex items-center gap-1"><input type="checkbox" value="Âm lượng quá nhỏ"> Âm nhỏ</label>
@@ -352,9 +447,9 @@
                     <input id="rev-note" type="text" placeholder="Ghi chú lỗi..."
                            class="w-full px-2.5 py-1.5 text-xs rounded border border-slate-300" />
                   </div>
-                  <button onclick="submitReviewDecision('reject')"
-                          class="w-full py-2.5 bg-vtb-red hover:bg-vtb-redHover text-white font-semibold text-xs rounded-lg shadow-sm transition">
-                    Từ chối & Yêu cầu thu lại
+                  <button type="button" onclick="submitReviewDecision('reject')"
+                          class="w-full min-h-10 py-2.5 bg-vtb-red hover:bg-vtb-redHover text-white font-semibold text-xs rounded-lg shadow-sm transition">
+                    Từ chối & Mở thu lại
                   </button>
                 </div>
               </div>
@@ -370,6 +465,17 @@
 <script>
 let adminToken = localStorage.getItem("vtb_admin_token") || "";
 let currentOverview = null, filteredCandidates = [], currentReviewItem = null;
+let adminWavePeaks = [], adminAudioDuration = 0;
+
+function showToast(msg, type = "success") {
+  const container = document.getElementById("toast-container");
+  const el = document.createElement("div");
+  const bg = type === "success" ? "bg-slate-900 text-white border-l-4 border-l-emerald-400" : "bg-rose-900 text-white border-l-4 border-l-rose-400";
+  el.className = `${bg} px-4 py-2.5 rounded-lg shadow-lg text-xs font-semibold transition-all duration-200`;
+  el.innerText = msg;
+  container.appendChild(el);
+  setTimeout(() => { el.style.opacity = "0"; setTimeout(() => el.remove(), 200); }, 2800);
+}
 
 async function handleLogin(e) {
   e.preventDefault();
@@ -444,14 +550,59 @@ async function loadOverview(datasetName = null) {
   document.getElementById("bar-female").style.width = `${100 - malePct}%`;
   document.getElementById("gender-ratio-label").innerText = `${malePct}% Nam / ${100 - malePct}% Nữ`;
 
+  // Horizontal Bar Breakdown for Scenarios (charts.csv Row #2)
   const scBox = document.getElementById("m-scenarios");
-  const scEntries = Object.entries(s.scenarios_recorded || {});
-  scBox.innerHTML = scEntries.length === 0
-    ? `<span class="text-slate-400">Chưa có dữ liệu bản ghi.</span>`
-    : scEntries.map(([sc, cnt]) => `<span class="px-2.5 py-1 bg-slate-100 border border-slate-200 rounded font-mono text-xs">${sc}: <b>${cnt}</b></span>`).join("");
+  const scEntries = Object.entries(s.scenarios_recorded || {}).sort((a, b) => b[1] - a[1]);
+  if (scEntries.length === 0) {
+    scBox.innerHTML = `<span class="text-slate-400">Chưa có dữ liệu bản ghi.</span>`;
+  } else {
+    const maxSc = Math.max(1, scEntries[0][1]);
+    scBox.innerHTML = scEntries.map(([sc, cnt]) => {
+      const w = Math.round((cnt / maxSc) * 100);
+      return `
+        <div class="space-y-1">
+          <div class="flex justify-between font-mono text-[11px]">
+            <span class="font-semibold text-slate-700">${sc}</span>
+            <span class="font-bold text-vtb-blue">${cnt} câu</span>
+          </div>
+          <div class="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+            <div class="h-full bg-vtb-blue rounded-full" style="width:${w}%"></div>
+          </div>
+        </div>
+      `;
+    }).join("");
+  }
 
+  renderLeaderboard(s.leaderboard || []);
   renderDashboardList();
   applyReviewFilters();
+}
+
+function renderLeaderboard(rows) {
+  const tbody = document.getElementById("leaderboard-body");
+  if (!rows.length) {
+    tbody.innerHTML = `<tr><td colspan="8" class="py-6 text-center text-slate-400">Chưa có dữ liệu đóng góp.</td></tr>`;
+    return;
+  }
+  let rankCounter = 1;
+  tbody.innerHTML = rows.map(r => {
+    const rankDisplay = r.is_anonymous ? "—" : `#${rankCounter++}`;
+    const approvedTotal = (r.approved || 0) + (r.approved_edited || 0);
+    const evaluatedTotal = approvedTotal + (r.rejected || 0);
+    const qualityPct = evaluatedTotal > 0 ? `${Math.round((approvedTotal / evaluatedTotal) * 100)}%` : "Chờ duyệt";
+    return `
+      <tr class="hover:bg-slate-50 transition">
+        <td class="py-2.5 px-4 font-mono font-bold text-slate-500">${rankDisplay}</td>
+        <td class="py-2.5 px-4 font-semibold ${r.is_anonymous ? 'text-slate-400 italic' : 'text-vtb-dark'}">${r.display_name}</td>
+        <td class="py-2.5 px-4 text-right font-mono font-bold text-vtb-blue">${r.recorded}</td>
+        <td class="py-2.5 px-4 text-right font-mono text-slate-600">${r.total_duration}s</td>
+        <td class="py-2.5 px-4 text-right font-mono text-emerald-700 font-bold">${approvedTotal}</td>
+        <td class="py-2.5 px-4 text-right font-mono text-amber-600">${r.unchecked}</td>
+        <td class="py-2.5 px-4 text-right font-mono text-rose-600">${r.rejected}</td>
+        <td class="py-2.5 px-4 text-right font-mono font-semibold text-slate-700">${qualityPct}</td>
+      </tr>
+    `;
+  }).join("");
 }
 
 function onSwitchDataset() { loadOverview(document.getElementById("ds-selector").value); }
@@ -463,7 +614,10 @@ async function activateSelectedDataset() {
     headers: { "Content-Type": "application/json", "X-Admin-Token": adminToken },
     body: JSON.stringify({ dataset_name: ds })
   });
-  if (res.ok) await loadOverview(ds);
+  if (res.ok) {
+    showToast(`Đã đặt ${ds} làm dataset thu âm chính thức!`);
+    await loadOverview(ds);
+  }
 }
 
 function toggleAddModal(show) {
@@ -498,6 +652,7 @@ async function handleCreateDataset(e) {
   }
   const newSlug = document.getElementById("new-ds-slug").value.trim();
   toggleAddModal(false);
+  showToast(`Đã tạo dataset ${newSlug} thành công!`);
   await loadOverview(newSlug);
 }
 
@@ -517,7 +672,10 @@ function renderDashboardList() {
   if (!currentOverview) return;
   const q = document.getElementById("dash-search").value.trim().toLowerCase();
   const box = document.getElementById("dash-list");
-  const items = currentOverview.recorded_items.filter(it => !q || it.task_id.toLowerCase().includes(q));
+  const items = currentOverview.recorded_items.filter(it => {
+    const spk = (it.audio.speaker_name || "").toLowerCase();
+    return !q || it.task_id.toLowerCase().includes(q) || spk.includes(q);
+  });
 
   if (items.length === 0) {
     box.innerHTML = `<div class="text-xs text-slate-400 py-6 text-center">Chưa có bản ghi nào phù hợp.</div>`;
@@ -526,14 +684,16 @@ function renderDashboardList() {
 
   box.innerHTML = items.slice(0, 50).map(it => {
     const audioUrl = `/api/admin/audio?object_key=${encodeURIComponent(it.audio.object_key)}&token=${encodeURIComponent(adminToken)}`;
+    const spkBadge = it.audio.speaker_name ? `<span class="px-2 py-0.5 rounded bg-vtb-light text-vtb-blue font-semibold">${it.audio.speaker_name}</span>` : `<span class="text-slate-400">Ẩn danh</span>`;
     return `
       <details class="px-5 py-3 hover:bg-slate-50 transition">
-        <summary class="cursor-pointer font-medium text-xs flex justify-between items-center">
-          <div class="flex items-center gap-3">
-            <span class="font-mono font-bold text-vtb-blue">${it.task_id}</span>
-            <span class="text-slate-600 truncate max-w-md">${it.reading_script}</span>
+        <summary class="cursor-pointer font-medium text-xs flex justify-between items-center gap-2">
+          <div class="flex items-center gap-2.5 min-w-0">
+            <span class="font-mono font-bold text-vtb-blue shrink-0">${it.task_id}</span>
+            ${spkBadge}
+            <span class="text-slate-600 truncate">${it.reading_script}</span>
           </div>
-          <div class="flex items-center gap-2 font-mono text-[11px]">
+          <div class="flex items-center gap-2 font-mono text-[11px] shrink-0">
             <span class="text-slate-400">${it.audio.voice_gender} · ${it.audio.duration_seconds}s</span>
             <span class="px-2 py-0.5 rounded bg-slate-100 border border-slate-200">${it.review.status}</span>
           </div>
@@ -555,7 +715,8 @@ function applyReviewFilters() {
   const g = document.getElementById("rev-filter-gender").value;
 
   filteredCandidates = currentOverview.recorded_items.filter(it => {
-    if (q && !it.task_id.toLowerCase().includes(q)) return false;
+    const spk = (it.audio.speaker_name || "").toLowerCase();
+    if (q && !it.task_id.toLowerCase().includes(q) && !spk.includes(q)) return false;
     if (st !== "ALL" && it.review.status !== st) return false;
     if (g !== "ALL" && it.audio.voice_gender.toLowerCase() !== g) return false;
     return true;
@@ -568,6 +729,7 @@ function applyReviewFilters() {
     listEl.innerHTML = `<div class="p-6 text-center text-xs text-slate-400">Trống</div>`;
     document.getElementById("rev-empty").classList.remove("hidden");
     document.getElementById("rev-workstation").classList.add("hidden");
+    currentReviewItem = null;
     return;
   }
 
@@ -585,14 +747,15 @@ function renderQueueItems() {
     const isSelected = it.task_id === activeId;
     const dotColor = it.review.status === "approved" ? "bg-emerald-500" :
                      it.review.status === "approved_edited" ? "bg-sky-500" : "bg-amber-500";
+    const spk = it.audio.speaker_name ? ` · ${it.audio.speaker_name}` : "";
     return `
-      <button onclick="selectReviewItem('${it.task_id}')"
+      <button type="button" onclick="selectReviewItem('${it.task_id}')"
               class="w-full text-left px-4 py-3 transition flex items-center justify-between ${isSelected ? 'bg-vtb-light border-l-4 border-l-vtb-blue' : 'hover:bg-slate-50'}">
-        <div>
-          <div class="font-mono text-xs font-bold text-slate-900">${it.task_id}</div>
-          <div class="text-[11px] text-slate-500 truncate max-w-[180px]">${it.reading_script}</div>
+        <div class="min-w-0 pr-2">
+          <div class="font-mono text-xs font-bold text-slate-900 truncate">${it.task_id}<span class="font-sans font-medium text-vtb-blue">${spk}</span></div>
+          <div class="text-[11px] text-slate-500 truncate">${it.reading_script}</div>
         </div>
-        <div class="flex items-center gap-2 font-mono text-[11px] text-slate-500">
+        <div class="flex items-center gap-2 font-mono text-[11px] text-slate-500 shrink-0">
           <span>${it.audio.duration_seconds}s</span>
           <span class="w-2 h-2 rounded-full ${dotColor}"></span>
         </div>
@@ -601,7 +764,7 @@ function renderQueueItems() {
   }).join("");
 }
 
-function selectReviewItem(taskId) {
+async function selectReviewItem(taskId) {
   const item = filteredCandidates.find(x => x.task_id === taskId);
   if (!item) return;
   currentReviewItem = item;
@@ -615,7 +778,8 @@ function selectReviewItem(taskId) {
     item.review.status === "approved_edited" ? "bg-sky-100 text-sky-800" :
     "bg-amber-100 text-amber-800"
   );
-  document.getElementById("rev-meta").innerText = `Giọng: ${item.audio.voice_gender} · Vùng miền: ${item.audio.accent || 'N/A'} · Thời lượng: ${item.audio.duration_seconds}s`;
+  const spkLabel = item.audio.speaker_name ? item.audio.speaker_name : "Ẩn danh";
+  document.getElementById("rev-meta").innerText = `Người đọc: ${spkLabel} · Giọng: ${item.audio.voice_gender} · Vùng miền: ${item.audio.accent || 'N/A'} · Thời lượng: ${item.audio.duration_seconds}s`;
   document.getElementById("rev-script").innerText = item.reading_script;
   document.getElementById("rev-instruction").innerText = item.delivery_instruction;
   document.getElementById("rev-edit-text").value = item.review.verified_transcript || item.reading_script;
@@ -623,7 +787,117 @@ function selectReviewItem(taskId) {
   document.querySelectorAll("#rev-reasons input[type=checkbox]").forEach(cb => cb.checked = false);
 
   const audioUrl = `/api/admin/audio?object_key=${encodeURIComponent(item.audio.object_key)}&token=${encodeURIComponent(adminToken)}`;
-  document.getElementById("rev-audio").src = audioUrl;
+  await loadAdminWaveform(audioUrl);
+}
+
+async function loadAdminWaveform(url) {
+  const player = document.getElementById("rev-audio");
+  player.pause();
+  player.src = url;
+  document.getElementById("rev-icon-play").classList.remove("hidden");
+  document.getElementById("rev-icon-pause").classList.add("hidden");
+
+  try {
+    const res = await fetch(url);
+    const buf = await res.arrayBuffer();
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const audioBuf = await ctx.decodeAudioData(buf);
+    await ctx.close();
+
+    adminAudioDuration = audioBuf.duration;
+    const samples = audioBuf.getChannelData(0);
+    const bins = 80;
+    const block = Math.max(1, Math.floor(samples.length / bins));
+    adminWavePeaks = [];
+    let maxP = 0.01;
+    for (let i = 0; i < bins; i++) {
+      let s = 0;
+      const st = i * block;
+      for (let j = 0; j < block && (st + j) < samples.length; j++) s += Math.abs(samples[st + j]);
+      const avg = s / block;
+      if (avg > maxP) maxP = avg;
+      adminWavePeaks.push(avg);
+    }
+    adminWavePeaks = adminWavePeaks.map(p => Math.max(0.08, p / maxP));
+    renderAdminWave(0);
+    updateAdminTimeLabel(0, adminAudioDuration);
+
+    player.ontimeupdate = () => {
+      const p = adminAudioDuration > 0 ? player.currentTime / adminAudioDuration : 0;
+      renderAdminWave(p);
+      updateAdminTimeLabel(player.currentTime, adminAudioDuration);
+    };
+    player.onended = () => {
+      document.getElementById("rev-icon-play").classList.remove("hidden");
+      document.getElementById("rev-icon-pause").classList.add("hidden");
+      renderAdminWave(1);
+    };
+
+    const isRevTabVisible = !document.getElementById("tab-rev").classList.contains("hidden");
+    if (isRevTabVisible && document.getElementById("chk-autoplay").checked) {
+      toggleAdminAudio();
+    }
+  } catch (e) {}
+}
+
+function renderAdminWave(progress = 0) {
+  const canvas = document.getElementById("rev-wave-canvas");
+  if (!canvas || !adminWavePeaks.length) return;
+  const dpr = window.devicePixelRatio || 1;
+  const W = canvas.clientWidth || 520;
+  const H = 48;
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  const ctx = canvas.getContext("2d");
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, W, H);
+
+  const gap = 3;
+  const n = adminWavePeaks.length;
+  const barW = Math.max(2.5, (W - gap * (n - 1)) / n);
+  const centerY = H / 2;
+
+  for (let i = 0; i < n; i++) {
+    const pct = i / n;
+    const h = Math.max(4, adminWavePeaks[i] * (H - 6));
+    const x = i * (barW + gap);
+    const y = centerY - h / 2;
+    ctx.fillStyle = pct <= progress ? "#38BDF8" : "#64748B";
+    ctx.beginPath();
+    ctx.roundRect(x, y, barW, h, 2);
+    ctx.fill();
+  }
+}
+
+function toggleAdminAudio() {
+  const player = document.getElementById("rev-audio");
+  if (!player.src) return;
+  if (player.paused) {
+    player.play().catch(() => {});
+    document.getElementById("rev-icon-play").classList.add("hidden");
+    document.getElementById("rev-icon-pause").classList.remove("hidden");
+  } else {
+    player.pause();
+    document.getElementById("rev-icon-play").classList.remove("hidden");
+    document.getElementById("rev-icon-pause").classList.add("hidden");
+  }
+}
+
+function scrubAdminWave(e) {
+  const canvas = document.getElementById("rev-wave-canvas");
+  const player = document.getElementById("rev-audio");
+  if (!player.src || !adminAudioDuration) return;
+  const rect = canvas.getBoundingClientRect();
+  const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+  player.currentTime = ratio * adminAudioDuration;
+  renderAdminWave(ratio);
+  updateAdminTimeLabel(player.currentTime, adminAudioDuration);
+  if (player.paused) toggleAdminAudio();
+}
+
+function updateAdminTimeLabel(cur, tot) {
+  const fmt = s => `${String(Math.floor(s / 60)).padStart(2, "0")}:${(s % 60).toFixed(1).padStart(4, "0")}`;
+  document.getElementById("rev-time-label").innerText = `${fmt(cur)} / ${fmt(tot)}`;
 }
 
 async function submitReviewDecision(decision) {
@@ -653,8 +927,27 @@ async function submitReviewDecision(decision) {
     return;
   }
 
+  showToast(`${currentReviewItem.task_id}: ${data.message}`);
   await loadOverview(currentOverview.selected_dataset);
 }
+
+// --- IDEA 6: Phím tắt tốc độ cao cho Admin ở tab QA Review ---
+window.addEventListener("keydown", e => {
+  const isRevTabVisible = !document.getElementById("tab-rev").classList.contains("hidden");
+  if (!isRevTabVisible || !currentReviewItem) return;
+  if (["INPUT", "SELECT", "TEXTAREA"].includes(document.activeElement.tagName)) return;
+
+  if (e.code === "Space") {
+    e.preventDefault();
+    toggleAdminAudio();
+  } else if (e.key === "1") {
+    e.preventDefault();
+    submitReviewDecision("approve");
+  } else if (e.key === "2") {
+    e.preventDefault();
+    document.getElementById("rev-edit-text").focus();
+  }
+});
 
 if (adminToken) loadOverview();
 </script>

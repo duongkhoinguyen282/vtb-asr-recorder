@@ -35,6 +35,13 @@ def _state_key(dataset_name: str, task_id: str) -> str:
     return f"{dataset_name}/states/{task_id}.json"
 
 
+def normalize_nickname(name: Optional[str]) -> str:
+    """Normalize speaker nickname for case-insensitive matching."""
+    if not name:
+        return ""
+    return " ".join(name.strip().split()).lower()
+
+
 def get_task_state(
     storage: StorageBackend, dataset_name: str, task_id: str
 ) -> Tuple[Optional[TaskState], Optional[str]]:
@@ -74,12 +81,14 @@ def allocate_task(
     session_id: str,
     speaker_gender: str,
     accent: Optional[str] = None,
+    speaker_name: Optional[str] = None,
     preferred_pair_id: Optional[str] = None,
     known_task_id: Optional[str] = None,
     max_retries: int = 15,
 ) -> Tuple[Optional[ManifestItem], Optional[TaskState], Optional[str]]:
     now = datetime.now(timezone.utc)
     manifest_by_id = {item.id: item for item in manifest}
+    clean_name = " ".join(speaker_name.strip().split()) if (speaker_name and speaker_name.strip()) else None
 
     if known_task_id and known_task_id in manifest_by_id:
         st, etag = get_task_state(storage, dataset_name, known_task_id)
@@ -136,6 +145,7 @@ def allocate_task(
     new_lease = RecordingLease(
         lease_id=lease_id,
         session_id=session_id,
+        speaker_name=clean_name,
         speaker_gender=speaker_gender,
         accent=accent,
         created_at=now.isoformat(),
@@ -266,6 +276,7 @@ def submit_recording(
     audio_bytes: bytes,
     speaker_gender: str,
     accent: Optional[str] = None,
+    speaker_name: Optional[str] = None,
     idempotency_token: Optional[str] = None,
 ) -> Tuple[bool, str, Optional[TaskState]]:
     try:
@@ -313,11 +324,13 @@ def submit_recording(
         return False, "Thời hạn giữ câu đã hết. Bản ghi chưa thể lưu.", None
 
     old_audio_key = st.current_audio.object_key if st.current_audio else None
+    clean_name = " ".join(speaker_name.strip().split()) if (speaker_name and speaker_name.strip()) else st.recording_lease.speaker_name
 
     audio_meta = AudioMetadata(
         recording_id=recording_uuid,
         object_key=audio_key,
         speaker_id=session_id,
+        speaker_name=clean_name,
         voice_gender=speaker_gender,
         accent=accent,
         sha256=sha256,
@@ -349,6 +362,42 @@ def submit_recording(
         return False, "Xung đột trạng thái khi lưu bản ghi. Vui lòng thử lại.", None
 
 
+def get_speaker_stats(
+    storage: StorageBackend,
+    dataset_name: str,
+    speaker_name: Optional[str] = None,
+    session_id: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Check if a nickname exists and count total recordings for this speaker."""
+    states = load_all_task_states(storage, dataset_name)
+    norm_target = normalize_nickname(speaker_name)
+
+    name_count = 0
+    session_count = 0
+    canonical_display_name = speaker_name.strip() if speaker_name else ""
+    owned_by_same_session = False
+
+    for _, (st, _) in states.items():
+        if st.status == TaskStatus.RECORDED and st.current_audio:
+            aud = st.current_audio
+            if session_id and aud.speaker_id == session_id:
+                session_count += 1
+            if norm_target and normalize_nickname(aud.speaker_name) == norm_target:
+                name_count += 1
+                if aud.speaker_name:
+                    canonical_display_name = aud.speaker_name
+                if session_id and aud.speaker_id == session_id:
+                    owned_by_same_session = True
+
+    return {
+        "exists": name_count > 0,
+        "name_count": name_count,
+        "session_count": session_count,
+        "display_name": canonical_display_name,
+        "owned_by_same_session": owned_by_same_session,
+    }
+
+
 def get_dataset_summary(
     storage: StorageBackend,
     dataset_name: str,
@@ -368,16 +417,51 @@ def get_dataset_summary(
     recorded_females = 0
 
     scenarios_recorded: Dict[str, int] = {}
+    contributors: Dict[str, Dict[str, Any]] = {}
     manifest_by_id = {item.id: item for item in manifest}
 
     for task_id, (st, _) in existing_states.items():
+        # Count historical rejections by contributor if present
+        for rej in st.rejection_history:
+            r_name = (rej.speaker_name or "").strip()
+            r_key = normalize_nickname(r_name) if r_name else "__anonymous__"
+            entry = contributors.setdefault(r_key, {
+                "display_name": r_name if r_name else "Ẩn danh (Chưa đặt tên)",
+                "is_anonymous": not bool(r_name),
+                "recorded": 0,
+                "approved": 0,
+                "approved_edited": 0,
+                "unchecked": 0,
+                "rejected": 0,
+                "total_duration": 0.0,
+            })
+            entry["rejected"] += 1
+
         if st.status == TaskStatus.RECORDED:
             recorded_count += 1
-            if st.current_audio:
-                if st.current_audio.voice_gender.lower() == "male":
+            aud = st.current_audio
+            if aud:
+                if aud.voice_gender.lower() == "male":
                     recorded_males += 1
-                elif st.current_audio.voice_gender.lower() == "female":
+                elif aud.voice_gender.lower() == "female":
                     recorded_females += 1
+
+                s_name = (aud.speaker_name or "").strip()
+                s_key = normalize_nickname(s_name) if s_name else "__anonymous__"
+                c_entry = contributors.setdefault(s_key, {
+                    "display_name": s_name if s_name else "Ẩn danh (Chưa đặt tên)",
+                    "is_anonymous": not bool(s_name),
+                    "recorded": 0,
+                    "approved": 0,
+                    "approved_edited": 0,
+                    "unchecked": 0,
+                    "rejected": 0,
+                    "total_duration": 0.0,
+                })
+                if s_name and c_entry["display_name"] == "Ẩn danh (Chưa đặt tên)":
+                    c_entry["display_name"] = s_name
+                c_entry["recorded"] += 1
+                c_entry["total_duration"] = round(c_entry["total_duration"] + (aud.duration_seconds or 0.0), 1)
 
             if task_id in manifest_by_id:
                 sc = manifest_by_id[task_id].scenario
@@ -386,10 +470,16 @@ def get_dataset_summary(
             r_status = st.review.status if st.review else ReviewStatus.UNCHECKED
             if r_status == ReviewStatus.UNCHECKED:
                 unchecked_count += 1
+                if aud:
+                    contributors[s_key]["unchecked"] += 1
             elif r_status == ReviewStatus.APPROVED:
                 approved_count += 1
+                if aud:
+                    contributors[s_key]["approved"] += 1
             elif r_status == ReviewStatus.APPROVED_EDITED:
                 approved_edited_count += 1
+                if aud:
+                    contributors[s_key]["approved_edited"] += 1
             elif r_status == ReviewStatus.REJECTED:
                 rejected_count += 1
 
@@ -397,6 +487,12 @@ def get_dataset_summary(
             reserved_count += 1
 
     available_count = max(0, total_tasks - recorded_count - reserved_count)
+
+    # Sort leaderboard: Named contributors first by recorded count desc, then anonymous
+    leaderboard = sorted(
+        contributors.values(),
+        key=lambda x: (0 if not x["is_anonymous"] else 1, -x["recorded"], -(x["approved"] + x["approved_edited"])),
+    )
 
     return {
         "total_tasks": total_tasks,
@@ -411,4 +507,5 @@ def get_dataset_summary(
         "recorded_males": recorded_males,
         "recorded_females": recorded_females,
         "scenarios_recorded": scenarios_recorded,
+        "leaderboard": leaderboard,
     }

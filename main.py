@@ -26,6 +26,7 @@ from services.storage import StorageNotFoundError, get_storage
 from services.tasks import (
     allocate_task,
     get_dataset_summary,
+    get_speaker_stats,
     load_all_task_states,
     release_lease,
     renew_lease,
@@ -66,21 +67,43 @@ def startup_event():
 
 
 @app.get("/api/reader/init")
-def reader_init(dataset: Optional[str] = None):
+def reader_init(
+    dataset: Optional[str] = None,
+    speaker_name: Optional[str] = None,
+    session_id: Optional[str] = None,
+):
     storage = get_storage()
     reg = ensure_initialized(storage)
     active_ds = dataset if (dataset and dataset in reg.datasets) else reg.active_dataset
     manifest = load_manifest_from_storage(storage, active_ds)
     summary = get_dataset_summary(storage, active_ds, manifest)
+    speaker_stats = get_speaker_stats(storage, active_ds, speaker_name, session_id)
     return {
         "active_dataset": active_ds,
         "dataset_info": reg.datasets.get(active_ds),
         "summary": summary,
+        "speaker_stats": speaker_stats,
     }
+
+
+class CheckNicknameRequest(BaseModel):
+    dataset: Optional[str] = None
+    speaker_name: str
+    session_id: Optional[str] = None
+
+
+@app.post("/api/reader/check-nickname")
+def reader_check_nickname(req: CheckNicknameRequest):
+    storage = get_storage()
+    reg = ensure_initialized(storage)
+    active_ds = req.dataset if (req.dataset and req.dataset in reg.datasets) else reg.active_dataset
+    stats = get_speaker_stats(storage, active_ds, req.speaker_name, req.session_id)
+    return stats
 
 
 class AllocateRequest(BaseModel):
     session_id: Optional[str] = None
+    speaker_name: Optional[str] = None
     gender: str
     accent: str = "bac"
     known_task_id: Optional[str] = None
@@ -106,9 +129,11 @@ def reader_allocate(req: AllocateRequest):
         session_id=session_id,
         speaker_gender=gender,
         accent=req.accent,
+        speaker_name=req.speaker_name,
         known_task_id=req.known_task_id,
     )
     summary = get_dataset_summary(storage, active_ds, manifest)
+    speaker_stats = get_speaker_stats(storage, active_ds, req.speaker_name, session_id)
 
     if not item or not state or not state.recording_lease:
         return {
@@ -117,6 +142,7 @@ def reader_allocate(req: AllocateRequest):
             "exhausted": True,
             "message": "Hiện tại đã hết câu phù hợp với nhóm giọng này trong tập dữ liệu đang thu, hoặc tất cả các câu đang được người khác giữ. Xin cảm ơn sự đóng góp của bạn!",
             "summary": summary,
+            "speaker_stats": speaker_stats,
         }
 
     return {
@@ -127,6 +153,7 @@ def reader_allocate(req: AllocateRequest):
         "lease": state.recording_lease.model_dump(),
         "idempotency_token": str(secrets.token_hex(16)),
         "summary": summary,
+        "speaker_stats": speaker_stats,
     }
 
 
@@ -162,6 +189,7 @@ async def reader_submit(
     session_id: str = Form(...),
     gender: str = Form(...),
     accent: str = Form("bac"),
+    speaker_name: Optional[str] = Form(None),
     idempotency_token: str = Form(...),
     audio: UploadFile = File(...),
 ):
@@ -177,6 +205,7 @@ async def reader_submit(
         audio_bytes=audio_bytes,
         speaker_gender=gender,
         accent=accent,
+        speaker_name=speaker_name,
         idempotency_token=idempotency_token,
     )
     if not success:
@@ -184,7 +213,13 @@ async def reader_submit(
 
     manifest = load_manifest_from_storage(storage, dataset)
     summary = get_dataset_summary(storage, dataset, manifest)
-    return {"ok": True, "message": msg, "summary": summary}
+    speaker_stats = get_speaker_stats(storage, dataset, speaker_name, session_id)
+    return {
+        "ok": True,
+        "message": msg,
+        "summary": summary,
+        "speaker_stats": speaker_stats,
+    }
 
 
 class AdminLoginRequest(BaseModel):
