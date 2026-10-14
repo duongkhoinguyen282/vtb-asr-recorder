@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VietinBank Voice AI — Hệ Thống Thu Thập Dữ Liệu Giọng Nói</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            vtb: {
+              blue: '#005993',
+              dark: '#003865',
+              light: '#EBF4FA',
+              red: '#DA2032',
+              redHover: '#B81828'
+            }
+          },
+          fontFamily: {
+            sans: ['"Be Vietnam Pro"', 'system-ui', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      font-family: 'Be Vietnam Pro', sans-serif;
+      background-color: #F2F5F8;
+      background-image: radial-gradient(#DCE4EC 1px, transparent 1px);
+      background-size: 24px 24px;
+    }
+    .tabular-nums { font-variant-numeric: tabular-nums; }
+    @keyframes rec-pulse {
+      0% { box-shadow: 0 0 0 0 rgba(218, 32, 50, 0.45); }
+      70% { box-shadow: 0 0 0 12px rgba(218, 32, 50, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(218, 32, 50, 0); }
+    }
+    .recording-ring { animation: rec-pulse 1.6s infinite; }
+    kbd {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      border-bottom-width: 2px;
+    }
+  </style>
+</head>
+<body class="text-slate-900 min-h-screen flex flex-col selection:bg-vtb-blue selection:text-white">
+
+  <!-- VIETINBANK ENTERPRISE HEADER -->
+  <header class="bg-gradient-to-r from-vtb-dark via-vtb-blue to-vtb-dark text-white shadow-md relative">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3.5">
+        <!-- Brand Emblem SVG -->
+        <div class="w-10 h-10 rounded-lg bg-white flex items-center justify-center shadow-sm shrink-0 relative overflow-hidden">
+          <div class="absolute top-0 left-0 right-0 h-1.5 bg-vtb-red"></div>
+          <svg class="w-5 h-5 text-vtb-blue mt-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+            <line x1="12" x2="12" y1="19" y2="22"/>
+          </svg>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="font-bold text-base sm:text-lg tracking-tight">VietinBank</span>
+            <span class="text-xs uppercase tracking-widest px-2 py-0.5 rounded bg-white/15 text-sky-100 font-semibold">Voice AI Studio</span>
+          </div>
+          <p class="text-[11px] sm:text-xs text-sky-200/90">Hệ thống thu thập dữ liệu tiếng nói chuẩn 16kHz PCM</p>
+        </div>
+      </div>
+
+      <!-- Right Status & Active Dataset -->
+      <div class="flex items-center gap-2.5">
+        <div class="hidden sm:flex items-center gap-1.5 bg-slate-900/35 border border-white/15 px-3 py-1.5 rounded-md text-xs">
+          <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+          <span class="text-sky-200">Tập kịch bản:</span>
+          <span id="badge-dataset" class="font-mono font-semibold text-white">--</span>
+        </div>
+      </div>
+    </div>
+    <!-- VietinBank Signature Red-Blue Accent Line -->
+    <div class="h-1 w-full bg-gradient-to-r from-vtb-red via-vtb-red to-vtb-blue"></div>
+  </header>
+
+  <main class="max-w-4xl w-full mx-auto px-4 sm:px-6 py-6 flex-1 flex flex-col justify-between gap-5">
+
+    <div class="space-y-4">
+      <!-- TOP UTILITY BAR: COMPACT PROFILE + PRIVACY POPOVER -->
+      <div class="bg-white rounded-xl border border-slate-200/90 shadow-sm px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+        <div class="flex flex-wrap items-center gap-3">
+          <div class="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-vtb-blue">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+            </svg>
+            <span>Cấu hình người đọc:</span>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <select id="select-gender" onchange="onProfileChange()"
+                    class="rounded-lg border border-slate-300 bg-slate-50 hover:bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 focus:border-vtb-blue focus:ring-2 focus:ring-vtb-blue/15 outline-none transition">
+              <option value="">-- Chọn giới tính * --</option>
+              <option value="male">Giọng Nam</option>
+              <option value="female">Giọng Nữ</option>
+            </select>
+
+            <select id="select-accent" onchange="onProfileChange()"
+                    class="rounded-lg border border-slate-300 bg-slate-50 hover:bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 focus:border-vtb-blue focus:ring-2 focus:ring-vtb-blue/15 outline-none transition">
+              <option value="bac">Vùng miền: Miền Bắc</option>
+              <option value="trung">Vùng miền: Miền Trung</option>
+              <option value="nam">Vùng miền: Miền Nam</option>
+              <option value="khac">Vùng miền: Khác</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Privacy Accordion Trigger -->
+        <button onclick="togglePrivacyInfo()" class="text-xs font-medium text-slate-500 hover:text-vtb-blue flex items-center gap-1 transition">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+          <span>Cam kết bảo mật & ẩn danh</span>
+        </button>
+      </div>
+
+      <!-- Privacy Notice Collapsible -->
+      <div id="privacy-drawer" class="hidden bg-slate-800 text-slate-200 rounded-xl p-4 text-xs leading-relaxed space-y-1.5 shadow-inner">
+        <div class="font-semibold text-white flex items-center justify-between">
+          <span>Quy chuẩn bảo mật dữ liệu nghiên cứu VietinBank ASR</span>
+          <button onclick="togglePrivacyInfo()" class="text-slate-400 hover:text-white">Đóng ✕</button>
+        </div>
+        <p>• <b>Lưu trữ nội bộ:</b> Tệp âm thanh được mã hóa và lưu trữ trong kho dữ liệu riêng tư phục vụ huấn luyện mô hình nhận dạng giọng nói.</p>
+        <p>• <b>Ẩn danh tuyệt đối:</b> Hệ thống không thu thập họ tên, email, số điện thoại hay bất kỳ thông tin định danh cá nhân nào.</p>
+      </div>
+
+      <!-- EMPTY / ONBOARDING PLACEHOLDER -->
+      <div id="state-placeholder" class="bg-white rounded-xl border border-slate-200/90 shadow-sm p-10 text-center space-y-3">
+        <div class="w-12 h-12 rounded-full bg-vtb-light text-vtb-blue flex items-center justify-center mx-auto">
+          <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/>
+          </svg>
+        </div>
+        <h3 class="text-base font-bold text-slate-800">Chào mừng bạn đến với Trạm Thu Âm Dữ Liệu Giọng Nói</h3>
+        <p id="placeholder-text" class="text-sm text-slate-600 max-w-md mx-auto">
+          Vui lòng chọn <b>Giới tính giọng nói</b> trên thanh cấu hình phía trên để hệ thống phân bổ kịch bản phù hợp với đại từ xưng hô.
+        </p>
+      </div>
+
+      <!-- RECORDING STUDIO WORKSPACE -->
+      <div id="workspace" class="hidden space-y-4">
+
+        <!-- TELEPROMPTER SCRIPT CARD -->
+        <section class="bg-white rounded-xl border border-slate-200/90 shadow-sm overflow-hidden">
+          <!-- Card Header: Metadata -->
+          <div class="bg-slate-50 border-b border-slate-200 px-5 py-3 flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center gap-2.5">
+              <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Mã kịch bản</span>
+              <span id="task-id" class="font-mono text-xs font-bold bg-vtb-blue text-white px-2.5 py-1 rounded tracking-wide">HNUM-0000</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span id="task-badge" class="font-mono text-xs font-medium bg-slate-200/80 text-slate-700 px-2.5 py-1 rounded">domain · scenario</span>
+            </div>
+          </div>
+
+          <!-- Director's Instruction Banner (Placed ABOVE script so reader sees how to act first) -->
+          <div class="bg-amber-50/90 border-b border-amber-200/80 px-5 py-3 flex items-start gap-3">
+            <svg class="w-4 h-4 text-amber-600 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/>
+            </svg>
+            <div class="text-xs sm:text-sm">
+              <span class="font-bold text-amber-900 uppercase tracking-wide text-[11px] block">Chỉ dẫn ngữ điệu (Không đọc thành tiếng dòng này):</span>
+              <span id="delivery-instruction" class="text-amber-950 font-medium italic"></span>
+            </div>
+          </div>
+
+          <!-- Main Teleprompter Text -->
+          <div class="p-6 sm:p-8 bg-white">
+            <div class="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-2.5 flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5 text-vtb-blue" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+              </svg>
+              <span>Nội dung cần đọc:</span>
+            </div>
+            <blockquote id="reading-script" class="text-xl sm:text-[25px] font-semibold text-slate-900 leading-[1.6] tracking-tight pl-4 border-l-4 border-vtb-blue select-text">
+              Đang tải câu đọc...
+            </blockquote>
+          </div>
+        </section>
+
+        <!-- AUDIO DECK & CONTROLS -->
+        <section class="bg-white rounded-xl border border-slate-200/90 shadow-sm p-5 space-y-4">
+          <div class="flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2">
+              <span id="status-led" class="w-2.5 h-2.5 rounded-full bg-slate-300"></span>
+              <span id="rec-status" class="text-xs sm:text-sm font-medium text-slate-600">
+                Sẵn sàng thu âm — Nhấn nút Thu âm hoặc phím <kbd class="bg-slate-100 border-slate-300 text-slate-700">Space</kbd>
+              </span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-[11px] font-mono uppercase text-slate-400 hidden sm:inline">16kHz PCM16</span>
+              <div id="rec-timer" class="font-mono tabular-nums text-base sm:text-lg font-bold text-slate-800 bg-slate-100 border border-slate-200 px-3 py-1 rounded-md">
+                00:00.0
+              </div>
+            </div>
+          </div>
+
+          <!-- LIVE PILL-BAR WAVEFORM (ONLY SHOWN WHILE RECORDING) -->
+          <div id="live-visualizer-box" class="hidden rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 space-y-1.5">
+            <div class="flex items-center justify-between text-xs">
+              <span id="mic-status-text" class="font-medium text-slate-500">Đang thu âm — Hãy đọc tự nhiên vào mic...</span>
+              <span class="font-mono text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-vtb-red/10 text-vtb-red">● REC</span>
+            </div>
+            <canvas id="waveform-canvas" class="w-full h-14 block"></canvas>
+          </div>
+
+          <!-- AUDIO PLAYBACK DECK (SHOWN AFTER RECORDING) -->
+          <div id="preview-box" class="hidden bg-vtb-light/60 border border-vtb-blue/20 rounded-lg p-3.5 space-y-2.5">
+            <div class="flex items-center justify-between text-xs">
+              <span class="font-semibold text-vtb-dark flex items-center gap-1.5">
+                <svg class="w-4 h-4 text-vtb-blue" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+                </svg>
+                <span>Kiểm tra lại bản thu trước khi gửi:</span>
+              </span>
+              <a id="download-link" href="#" download="recording.wav" class="font-medium text-vtb-blue hover:underline flex items-center gap-1">
+                <span>Tải file .WAV</span>
+              </a>
+            </div>
+            <audio id="audio-player" controls class="w-full h-10"></audio>
+          </div>
+
+          <!-- ALERT FEEDBACK -->
+          <div id="alert-box" class="hidden rounded-lg p-3 text-xs sm:text-sm font-medium"></div>
+
+          <!-- CONTROL BUTTON BAR -->
+          <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 pt-1">
+            <!-- Record / Stop Button (VietinBank Red) -->
+            <button id="btn-record" onclick="toggleRecording()"
+                    class="sm:col-span-5 py-3 px-4 rounded-lg font-semibold text-sm text-white bg-vtb-red hover:bg-vtb-redHover transition flex items-center justify-center gap-2.5 shadow-sm">
+              <span id="btn-record-icon" class="w-2.5 h-2.5 rounded-full bg-white"></span>
+              <span id="btn-record-text">Bắt đầu thu</span>
+              <kbd class="bg-black/20 border-black/30 text-white/90 ml-1">Space</kbd>
+            </button>
+
+            <!-- Submit Button (VietinBank Blue) -->
+            <button id="btn-submit" onclick="submitRecording()" disabled
+                    class="sm:col-span-5 py-3 px-4 rounded-lg font-semibold text-sm text-white bg-vtb-blue hover:bg-vtb-dark disabled:opacity-40 disabled:pointer-events-none transition flex items-center justify-center gap-2 shadow-sm">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 2 11 13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+              </svg>
+              <span id="btn-submit-text">Gửi bản ghi</span>
+              <kbd class="bg-black/20 border-black/30 text-white/90 ml-1">Enter</kbd>
+            </button>
+
+            <!-- Skip Button -->
+            <button id="btn-skip" onclick="skipTask()"
+                    class="sm:col-span-2 py-3 px-3 rounded-lg font-semibold text-xs sm:text-sm text-slate-600 bg-slate-100 hover:bg-slate-200 border border-slate-200/80 transition flex items-center justify-center gap-1">
+              <span>Bỏ qua</span>
+            </button>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <!-- FOOTER PROGRESS BAR -->
+    <footer class="bg-white rounded-xl border border-slate-200/90 shadow-sm px-5 py-3.5 space-y-2">
+      <div class="flex justify-between items-center text-xs">
+        <span class="text-slate-500 font-medium">Tiến độ hoàn thành tập dữ liệu (<strong id="footer-dataset" class="text-slate-700 font-mono">--</strong>)</span>
+        <span id="footer-stats" class="font-mono tabular-nums font-bold text-vtb-blue">0 / 0 câu (0.0%)</span>
+      </div>
+      <div class="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+        <div id="footer-bar" class="h-full bg-gradient-to-r from-vtb-blue to-sky-500 transition-all duration-300" style="width: 0%"></div>
+      </div>
+    </footer>
+
+  </main>
+
+<script>
+// --- Giữ thanh địa chỉ URL luôn sạch tuyệt đối ---
+if (window.location.search) {
+  window.history.replaceState({}, "", window.location.pathname);
+}
+
+let state = {
+  sessionId: sessionStorage.getItem("vtb_tab_session_id") || "",
+  savedTaskId: sessionStorage.getItem("vtb_tab_task_id") || "",
+  gender: localStorage.getItem("vtb_gender") || "",
+  accent: localStorage.getItem("vtb_accent") || "bac",
+  dataset: "",
+  currentTask: null,
+  currentLease: null,
+  idempotencyToken: "",
+  wavBlob: null,
+  isRecording: false,
+  isSubmitting: false
+};
+
+let mediaRecorder = null, audioChunks = [], micStream = null;
+let audioContext = null, analyser = null, animFrameId = null;
+let timerInterval = null, recordStartTime = 0;
+let waveHistory = [];
+
+function togglePrivacyInfo() {
+  document.getElementById("privacy-drawer").classList.toggle("hidden");
+}
+
+function persistBrowserState() {
+  if (state.sessionId) sessionStorage.setItem("vtb_tab_session_id", state.sessionId);
+  if (state.currentTask) {
+    sessionStorage.setItem("vtb_tab_task_id", state.currentTask.id);
+  } else {
+    sessionStorage.removeItem("vtb_tab_task_id");
+  }
+  if (state.gender) localStorage.setItem("vtb_gender", state.gender);
+  if (state.accent) localStorage.setItem("vtb_accent", state.accent);
+}
+
+function showAlert(msg, type = "error") {
+  const box = document.getElementById("alert-box");
+  box.className = "rounded-lg p-3 text-xs sm:text-sm font-medium " + (
+    type === "error" ? "bg-rose-50 text-rose-700 border border-rose-200" :
+    type === "success" ? "bg-emerald-50 text-emerald-700 border border-emerald-200" :
+    "bg-amber-50 text-amber-800 border border-amber-200"
+  );
+  box.innerText = msg;
+  box.classList.remove("hidden");
+}
+
+function hideAlert() { document.getElementById("alert-box").classList.add("hidden"); }
+
+function updateProgressUI(activeDataset, summary) {
+  if (!summary) return;
+  document.getElementById("badge-dataset").innerText = activeDataset;
+  document.getElementById("footer-dataset").innerText = activeDataset;
+  const total = summary.total_tasks || 0;
+  const recorded = summary.recorded || 0;
+  const pct = total > 0 ? ((recorded / total) * 100).toFixed(1) : "0.0";
+  document.getElementById("footer-stats").innerText = `${recorded} / ${total} câu (${pct}%)`;
+  document.getElementById("footer-bar").style.width = `${Math.min(100, pct)}%`;
+}
+
+async function initApp() {
+  document.getElementById("select-gender").value = state.gender;
+  document.getElementById("select-accent").value = state.accent;
+
+  const res = await fetch("/api/reader/init");
+  const data = await res.json();
+  state.dataset = data.active_dataset;
+  updateProgressUI(data.active_dataset, data.summary);
+
+  if (state.gender) {
+    await allocateNextTask(state.savedTaskId || null);
+  }
+}
+
+async function onProfileChange() {
+  const g = document.getElementById("select-gender").value;
+  const a = document.getElementById("select-accent").value;
+
+  if (state.currentTask && state.currentLease && g !== state.gender) {
+    await fetch("/api/reader/skip", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ dataset: state.dataset, task_id: state.currentTask.id, lease_id: state.currentLease.lease_id })
+    });
+    state.currentTask = null;
+    state.currentLease = null;
+  }
+
+  state.gender = g;
+  state.accent = a;
+  persistBrowserState();
+
+  if (!state.gender) {
+    document.getElementById("workspace").classList.add("hidden");
+    document.getElementById("state-placeholder").classList.remove("hidden");
+    document.getElementById("placeholder-text").innerHTML = "Vui lòng chọn <b>Giới tính giọng nói</b> trên thanh cấu hình phía trên để hệ thống phân bổ kịch bản phù hợp.";
+    return;
+  }
+  await allocateNextTask(null);
+}
+
+async function allocateNextTask(knownTaskId = null) {
+  hideAlert();
+  resetAudioState();
+
+  const res = await fetch("/api/reader/allocate", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      session_id: state.sessionId,
+      gender: state.gender,
+      accent: state.accent,
+      known_task_id: knownTaskId,
+      dataset: state.dataset
+    })
+  });
+  const data = await res.json();
+
+  state.sessionId = data.session_id;
+  state.dataset = data.active_dataset;
+  updateProgressUI(data.active_dataset, data.summary);
+
+  if (data.exhausted) {
+    state.currentTask = null;
+    state.currentLease = null;
+    persistBrowserState();
+    document.getElementById("workspace").classList.add("hidden");
+    document.getElementById("state-placeholder").classList.remove("hidden");
+    document.getElementById("placeholder-text").innerText = data.message;
+    return;
+  }
+
+  state.currentTask = data.task;
+  state.currentLease = data.lease;
+  state.idempotencyToken = data.idempotency_token;
+  persistBrowserState();
+
+  document.getElementById("state-placeholder").classList.add("hidden");
+  document.getElementById("workspace").classList.remove("hidden");
+
+  document.getElementById("task-id").innerText = data.task.id;
+  document.getElementById("task-badge").innerText = `${data.task.domain} · ${data.task.scenario}`;
+  document.getElementById("reading-script").innerText = data.task.reading_script;
+  document.getElementById("delivery-instruction").innerText = data.task.delivery_instruction;
+}
+
+function resetAudioState() {
+  state.wavBlob = null;
+  document.getElementById("preview-box").classList.add("hidden");
+  document.getElementById("live-visualizer-box").classList.add("hidden");
+  document.getElementById("audio-player").src = "";
+  document.getElementById("btn-submit").disabled = true;
+  document.getElementById("rec-timer").innerText = "00:00.0";
+  document.getElementById("status-led").className = "w-2.5 h-2.5 rounded-full bg-slate-300";
+  document.getElementById("rec-status").innerHTML = 'Sẵn sàng thu âm — Nhấn nút Thu âm hoặc phím <kbd class="bg-slate-100 border-slate-300 text-slate-700">Space</kbd>';
+  const btn = document.getElementById("btn-record");
+  btn.classList.remove("recording-ring", "bg-slate-800");
+  btn.classList.add("bg-vtb-red");
+  document.getElementById("btn-record-icon").className = "w-2.5 h-2.5 rounded-full bg-white";
+  document.getElementById("btn-record-text").innerText = "Bắt đầu thu";
+}
+
+async function toggleRecording() {
+  if (state.isSubmitting || !state.currentTask) return;
+  hideAlert();
+
+  if (!state.isRecording) {
+    try {
+      micStream = await navigator.mediaDevices.getUserMedia({
+        audio: { channelCount: 1, echoCancellation: false, noiseSuppression: false, autoGainControl: false }
+      });
+    } catch (err) {
+      showAlert("Không thể truy cập Microphone. Vui lòng cấp quyền Microphone trên trình duyệt.", "error");
+      return;
+    }
+
+    document.getElementById("preview-box").classList.add("hidden");
+    document.getElementById("live-visualizer-box").classList.remove("hidden");
+    state.isRecording = true;
+
+    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioContext.state === "suspended") await audioContext.resume();
+    const source = audioContext.createMediaStreamSource(micStream);
+    analyser = audioContext.createAnalyser();
+    analyser.fftSize = 256;
+    source.connect(analyser);
+
+    startLiveVoiceVisualizer();
+
+    audioChunks = [];
+    mediaRecorder = new MediaRecorder(micStream);
+    mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
+    mediaRecorder.onstop = async () => {
+      stopVisualizerAndMic();
+      document.getElementById("live-visualizer-box").classList.add("hidden");
+      document.getElementById("rec-status").innerText = "Đang chuẩn hóa âm thanh chuẩn 16kHz Mono PCM16...";
+      try {
+        const rawBlob = new Blob(audioChunks);
+        state.wavBlob = await convertBlobTo16kMonoWav(rawBlob);
+        state.idempotencyToken = crypto.randomUUID ? crypto.randomUUID() : String(Date.now());
+
+        const url = URL.createObjectURL(state.wavBlob);
+        document.getElementById("audio-player").src = url;
+        document.getElementById("download-link").href = url;
+        document.getElementById("download-link").download = `${state.currentTask.id}.wav`;
+        document.getElementById("preview-box").classList.remove("hidden");
+        document.getElementById("btn-submit").disabled = false;
+        document.getElementById("status-led").className = "w-2.5 h-2.5 rounded-full bg-emerald-500";
+        document.getElementById("rec-status").innerHTML = 'Đã thu xong — Nghe lại hoặc nhấn <kbd class="bg-slate-100 border-slate-300 text-slate-700">Enter</kbd> để Gửi bản ghi';
+      } catch (e) {
+        showAlert("Không thể xử lý bản thu âm. Vui lòng thử thu lại.", "error");
+      }
+    };
+
+    mediaRecorder.start();
+    recordStartTime = performance.now();
+    timerInterval = setInterval(updateTimer, 100);
+
+    document.getElementById("status-led").className = "w-2.5 h-2.5 rounded-full bg-vtb-red animate-ping";
+    const btn = document.getElementById("btn-record");
+    btn.classList.add("recording-ring", "bg-slate-800");
+    btn.classList.remove("bg-vtb-red");
+    document.getElementById("btn-record-icon").className = "w-2.5 h-2.5 rounded-sm bg-vtb-red";
+    document.getElementById("btn-record-text").innerText = "Dừng thu";
+    document.getElementById("rec-status").innerText = "Đang ghi âm trực tiếp...";
+  } else {
+    state.isRecording = false;
+    clearInterval(timerInterval);
+    if (mediaRecorder && mediaRecorder.state !== "inactive") mediaRecorder.stop();
+    const btn = document.getElementById("btn-record");
+    btn.classList.remove("recording-ring", "bg-slate-800");
+    btn.classList.add("bg-vtb-red");
+    document.getElementById("btn-record-icon").className = "w-2.5 h-2.5 rounded-full bg-white";
+    document.getElementById("btn-record-text").innerText = "Thu lại";
+  }
+}
+
+function startLiveVoiceVisualizer() {
+  const canvas = document.getElementById("waveform-canvas");
+  const ctx = canvas.getContext("2d");
+  const dataArray = new Uint8Array(analyser.fftSize);
+  const textEl = document.getElementById("mic-status-text");
+
+  const barWidth = 4;
+  const gap = 5;
+  const step = barWidth + gap;
+  const totalSlots = Math.floor((canvas.clientWidth || 680) / step);
+
+  waveHistory = new Array(totalSlots).fill(0);
+  let lastPushTime = 0;
+  let lastVoiceDetected = 0;
+
+  function drawRoundedBar(x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  function render(now) {
+    if (!state.isRecording) return;
+    animFrameId = requestAnimationFrame(render);
+
+    const dpr = window.devicePixelRatio || 1;
+    const cssWidth = canvas.clientWidth || 680;
+    const cssHeight = 56;
+    if (canvas.width !== cssWidth * dpr || canvas.height !== cssHeight * dpr) {
+      canvas.width = cssWidth * dpr;
+      canvas.height = cssHeight * dpr;
+    }
+    ctx.save();
+    ctx.scale(dpr, dpr);
+
+    analyser.getByteTimeDomainData(dataArray);
+
+    let sumSq = 0;
+    let maxPeak = 0;
+    for (let i = 0; i < dataArray.length; i++) {
+      const norm = (dataArray[i] - 128) / 128.0;
+      const absVal = Math.abs(norm);
+      sumSq += norm * norm;
+      if (absVal > maxPeak) maxPeak = absVal;
+    }
+    const rms = Math.sqrt(sumSq / dataArray.length);
+
+    let level = 0;
+    if (rms > 0.011 || maxPeak > 0.032) {
+      level = Math.min(1.0, Math.pow(rms * 6.8 + maxPeak * 1.45, 0.7));
+      lastVoiceDetected = now;
+    }
+
+    if (now - lastVoiceDetected < 400) {
+      textEl.className = "font-semibold text-vtb-blue";
+      textEl.innerText = "Đang thu nhận tín hiệu giọng nói tốt...";
+    } else {
+      textEl.className = "font-medium text-slate-500";
+      textEl.innerText = "Đang lắng nghe — Hãy đọc to kịch bản...";
+    }
+
+    if (now - lastPushTime > 45) {
+      lastPushTime = now;
+      waveHistory.push(level);
+      const maxBars = Math.floor(cssWidth / step);
+      while (waveHistory.length > maxBars) {
+        waveHistory.shift();
+      }
+    }
+
+    ctx.clearRect(0, 0, cssWidth, cssHeight);
+    const centerY = cssHeight / 2;
+
+    for (let i = 0; i < waveHistory.length; i++) {
+      const val = waveHistory[i];
+      const x = i * step;
+
+      if (val <= 0.02) {
+        ctx.fillStyle = "#CBD5E1";
+        drawRoundedBar(x, centerY - 1.5, barWidth, 3, 1.5);
+      } else {
+        const h = Math.max(8, val * (cssHeight - 6));
+        const y = centerY - h / 2;
+        ctx.fillStyle = i >= waveHistory.length - 4 ? "#DA2032" : "#005993";
+        drawRoundedBar(x, y, barWidth, h, barWidth / 2);
+      }
+    }
+
+    ctx.restore();
+  }
+
+  animFrameId = requestAnimationFrame(render);
+}
+
+function stopVisualizerAndMic() {
+  if (animFrameId) cancelAnimationFrame(animFrameId);
+  if (micStream) micStream.getTracks().forEach(t => t.stop());
+  if (audioContext && audioContext.state !== "closed") audioContext.close();
+}
+
+function updateTimer() {
+  const elapsed = (performance.now() - recordStartTime) / 1000;
+  const mins = String(Math.floor(elapsed / 60)).padStart(2, "0");
+  const secs = (elapsed % 60).toFixed(1).padStart(4, "0");
+  document.getElementById("rec-timer").innerText = `${mins}:${secs}`;
+}
+
+async function convertBlobTo16kMonoWav(blob) {
+  const arrayBuffer = await blob.arrayBuffer();
+  const decodeCtx = new (window.AudioContext || window.webkitAudioContext)();
+  const audioBuffer = await decodeCtx.decodeAudioData(arrayBuffer);
+  await decodeCtx.close();
+
+  const targetRate = 16000;
+  const targetLength = Math.ceil(audioBuffer.duration * targetRate);
+  const offlineCtx = new OfflineAudioContext(1, targetLength, targetRate);
+  const source = offlineCtx.createBufferSource();
+  source.buffer = audioBuffer;
+  source.connect(offlineCtx.destination);
+  source.start(0);
+  const renderedBuffer = await offlineCtx.startRendering();
+  return encodePCM16Wav(renderedBuffer.getChannelData(0), targetRate);
+}
+
+function encodePCM16Wav(samples, sampleRate) {
+  const buffer = new ArrayBuffer(44 + samples.length * 2);
+  const view = new DataView(buffer);
+  const writeStr = (offset, str) => { for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i)); };
+
+  writeStr(0, "RIFF");
+  view.setUint32(4, 36 + samples.length * 2, true);
+  writeStr(8, "WAVE");
+  writeStr(12, "fmt ");
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true);
+  view.setUint16(22, 1, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * 2, true);
+  view.setUint16(32, 2, true);
+  view.setUint16(34, 16, true);
+  writeStr(36, "data");
+  view.setUint32(40, samples.length * 2, true);
+
+  let offset = 44;
+  for (let i = 0; i < samples.length; i++, offset += 2) {
+    const s = Math.max(-1, Math.min(1, samples[i]));
+    view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+  }
+  return new Blob([buffer], { type: "audio/wav" });
+}
+
+async function submitRecording() {
+  if (!state.wavBlob || !state.currentTask || state.isSubmitting) return;
+  state.isSubmitting = true;
+  hideAlert();
+
+  const btnSubmit = document.getElementById("btn-submit");
+  const btnText = document.getElementById("btn-submit-text");
+  btnSubmit.disabled = true;
+  btnText.innerText = "Đang lưu bản thu...";
+
+  const formData = new FormData();
+  formData.append("dataset", state.dataset);
+  formData.append("task_id", state.currentTask.id);
+  formData.append("lease_id", state.currentLease.lease_id);
+  formData.append("session_id", state.sessionId);
+  formData.append("gender", state.gender);
+  formData.append("accent", state.accent);
+  formData.append("idempotency_token", state.idempotencyToken);
+  formData.append("audio", state.wavBlob, `${state.currentTask.id}.wav`);
+
+  try {
+    const res = await fetch("/api/reader/submit", { method: "POST", body: formData });
+    const data = await res.json();
+    if (!res.ok) {
+      showAlert(data.detail || "Không thể gửi bản ghi. Bản thu vẫn được giữ lại để bạn thử lại.", "error");
+      btnSubmit.disabled = false;
+      btnText.innerText = "Gửi bản ghi";
+      state.isSubmitting = false;
+      return;
+    }
+    updateProgressUI(state.dataset, data.summary);
+    state.isSubmitting = false;
+    btnText.innerText = "Gửi bản ghi";
+    await allocateNextTask(null);
+  } catch (err) {
+    showAlert("Lỗi kết nối mạng. Bản thu của bạn vẫn được giữ nguyên, vui lòng nhấn Gửi lại.", "error");
+    btnSubmit.disabled = false;
+    btnText.innerText = "Gửi bản ghi";
+    state.isSubmitting = false;
+  }
+}
+
+async function skipTask() {
+  if (!state.currentTask || state.isRecording || state.isSubmitting) return;
+  await fetch("/api/reader/skip", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ dataset: state.dataset, task_id: state.currentTask.id, lease_id: state.currentLease.lease_id })
+  });
+  state.currentTask = null;
+  state.currentLease = null;
+  persistBrowserState();
+  await allocateNextTask(null);
+}
+
+setInterval(async () => {
+  if (!state.currentTask || !state.currentLease || state.isSubmitting) return;
+  try {
+    const res = await fetch("/api/reader/heartbeat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ dataset: state.dataset, task_id: state.currentTask.id, lease_id: state.currentLease.lease_id })
+    });
+    const data = await res.json();
+    if (!data.ok) {
+      showAlert("Phiên giữ câu đã hết hạn. Hãy tải bản thu về nếu cần, rồi nhấn 'Bỏ qua' để nhận câu mới.", "warn");
+    }
+  } catch (e) {}
+}, 60000);
+
+window.addEventListener("keydown", e => {
+  if (["INPUT", "SELECT", "TEXTAREA"].includes(document.activeElement.tagName)) return;
+  if (e.code === "Space" && state.currentTask) { e.preventDefault(); toggleRecording(); }
+  else if (e.code === "Enter" && state.wavBlob && !state.isRecording && !state.isSubmitting) { e.preventDefault(); submitRecording(); }
+});
+
+initApp();
+</script>
+</body>
+</html>

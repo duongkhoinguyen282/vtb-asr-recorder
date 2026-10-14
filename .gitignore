@@ -36,3 +36,5 @@ VTB_RECORDING_CODEX_STARTER.zip
 .venv/
 __pycache__/
 .pytest_cache/
+*.zip
+[[]dev[]]*.py
